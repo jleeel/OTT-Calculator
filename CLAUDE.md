@@ -112,6 +112,29 @@ caught by them. Re-derive from the primary GPC chart before changing anything.
   block. The real integrity mechanism is the **public measurement history**,
   one tap from each board row.
 
+- `/diagnose` is rate limited **by IP, in Postgres**, not by cookie. A cookie
+  limit is a courtesy and clearing it resets the count; every call here costs
+  money. The ledger (`diagnose_requests`) stores an **HMAC of the address**, not
+  the address, keyed by the service role key — rotating that key resets the
+  counters instead of exposing anything. anon has **no privileges on that table
+  at all** and no policy.
+- The slot is claimed **before** the model call, not after. A request that
+  reaches Anthropic and then times out has still cost money. If the limiter
+  itself is down the route **refuses** — falling open is someone else's bill.
+- The system prompt and tool schema live in `src/lib/diagnose/prompt.ts`; the
+  response type and grower-facing copy live in `types.ts`. That split is load
+  bearing: the client imports `types.ts`, so keeping the prompt out of it keeps
+  the prompt out of the browser bundle. Verified by grepping `.next/static`
+  after a build, not assumed from tree shaking.
+- The model answers through a **forced single tool call**, not
+  `output_config.format` — structured outputs are not available on
+  `claude-sonnet-4-6`, and a tool with an input schema gets the same guarantee
+  on every model.
+- The pesticide rule is enforced by **tests over the prompt text**
+  (`prompt.test.ts`), including one asserting the prompt does not itself name a
+  product. A prompt listing products as examples of what not to say has put
+  product names in front of the model.
+
 ## Leaderboard layout
 
 ```
@@ -126,6 +149,21 @@ src/app/api/leaderboard/
   entries/route.ts       POST = validate, recompute weight, insert
 src/components/
   EnterLeaderboard.tsx   submit dialog, prefilled from the local log
+```
+
+## Diagnose layout
+
+```
+supabase/migrations/
+  0005_diagnose_rate_limit.sql   the ledger; anon gets nothing
+src/lib/diagnose/
+  prompt.ts              system prompt + tool schema — SERVER ONLY
+  types.ts               response shape, copy, both normalisers — client safe
+  image.ts               pure; magic-byte sniffing, size cap, note cleaning
+  rate-limit.ts          pure; IP extraction, HMAC, sliding window
+  requests.ts            the ledger read/write on the service role key
+src/app/api/diagnose/route.ts   the only place ANTHROPIC_API_KEY is read
+src/components/DiagnoseForm.tsx downscales in-browser, posts, renders
 ```
 
 ## Build discipline

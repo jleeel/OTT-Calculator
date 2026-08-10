@@ -13,9 +13,10 @@ Vercel.
 | -------------- | ----------- | --------------------------------------------------------- |
 | `/`            | Working     | Calculator, multi-fruit patch, dated log, lb/day growth   |
 | `/leaderboard` | Working     | Ranked by measured OTT; one row per pumpkin               |
-| `/diagnose`    | Placeholder | Will read a fruit's history for heavy/light-to-chart trends |
+| `/diagnose`    | Working     | Photograph a sick plant, get likely causes and what to check |
 | `/api/leaderboard/auth`    | Working | Exchange the patch passcode for a session cookie   |
 | `/api/leaderboard/entries` | Working | Validated, passcode-gated insert                   |
+| `/api/diagnose`            | Working | Reads a photo with Claude; IP rate limited         |
 
 The calculator's measurement log is **local to the browser**
 (`localStorage`, key `agoptics-ott-v1`). It is not synced and not sent
@@ -30,12 +31,18 @@ src/
     page.tsx                  calculator (client component)
     layout.tsx                masthead, nav, footer
     globals.css               Tailwind v4 theme tokens
-    leaderboard/page.tsx      placeholder
-    diagnose/page.tsx         placeholder
-    api/                      route handlers (empty for now)
+    leaderboard/page.tsx      the board
+    diagnose/page.tsx         plant help
+    api/                      route handlers
   lib/
     ott.ts                    weight formula + growth math, all pure
     ott.test.ts               unit tests, anchored to the published chart
+    diagnose/
+      prompt.ts               system prompt + tool schema (server only)
+      types.ts                the response shape and the grower-facing copy
+      image.ts                media-type sniffing and the size cap
+      rate-limit.ts           IP extraction, hashing, window logic (pure)
+      requests.ts             the ledger read/write, service role
     supabase/
       client.ts               browser client, anon key, RLS applies
       server.ts               server clients incl. service role
@@ -92,14 +99,19 @@ migration and paste it into the dashboard:
 npm run migration:print
 ```
 
-Then **SQL Editor → New query → paste → Run**. The migration creates the
-`entries` table, its indexes, RLS with a select-only policy for anon, and the
-`leaderboard_current` view.
+Then **SQL Editor → New query → paste → Run**. `supabase/migrations/` holds
+them in order — `0001` creates the `entries` table, its indexes, RLS with a
+select-only policy for anon, and the `leaderboard_current` view; later ones
+tighten grants, add ownership and soft delete, and add the `/diagnose` rate
+limit ledger. Run them in filename order on a fresh project.
 
-Row Level Security is what protects the data. Anon gets `SELECT` and nothing
-else; there is deliberately no insert policy, because every write goes through
-`/api/leaderboard/entries` on the secret key, which bypasses RLS. That route is
-the only thing in the app that may use the secret key.
+Row Level Security is what protects the data, but it is not the whole of it.
+Supabase grants anon the full privilege set on new tables in `public`, and
+`TRUNCATE` is not subject to RLS — so every table also needs an explicit
+`revoke all`, and it needs verifying by assuming the anon role and attempting
+each operation rather than by reading the policy. Anon reads the board through
+views and has no rights on `entries` or `diagnose_requests` at all; writes go
+through route handlers on the secret key.
 
 ### Commands
 
@@ -128,7 +140,7 @@ Preview, and Development:
 | `SUPABASE_SERVICE_ROLE_KEY`     | **Secret**  | Supabase `service_role` key — bypasses RLS                |
 | `LEADERBOARD_PASSCODE`          | **Secret**  | `openssl rand -base64 32`                                 |
 | `ADMIN_PASSCODE`                | **Secret**  | Admin actions; unused until a later pass                  |
-| `ANTHROPIC_API_KEY`             | **Secret**  | Reserved for `/diagnose`; unused until a later pass       |
+| `ANTHROPIC_API_KEY`             | **Secret**  | Read by `/api/diagnose`; without it that page says so     |
 | `NEXT_PUBLIC_SITE_URL`          | Public      | Your production URL, e.g. `https://ott.example.com`       |
 
 Anything prefixed `NEXT_PUBLIC_` is compiled into the browser bundle and is

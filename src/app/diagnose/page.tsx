@@ -1,28 +1,34 @@
 import type { Metadata } from "next";
+import DiagnoseForm from "@/components/DiagnoseForm";
+import { DIAGNOSE_DISCLAIMER } from "@/lib/diagnose/types";
 
 export const metadata: Metadata = {
   title: "Plant help · Giant Pumpkin Calculator",
   description:
-    "Work out why a giant pumpkin plant is struggling, and what to check next.",
+    "Photograph a giant pumpkin leaf, vine or fruit and get an idea of what is going on with it.",
 };
 
 export default function DiagnosePage() {
   return (
-    <section className="rounded-2xl bg-cream p-5 shadow-[0_2px_16px_rgba(0,0,0,0.16)]">
-      <h1 className="display-face text-title leading-tight font-semibold text-vine">
-        Plant help
-      </h1>
-      <p className="mt-2 text-small leading-relaxed text-sage">
-        Not built yet. This is where you will be able to show a photo of a
-        struggling plant and get a shortlist of likely causes, plus what to
-        check on the plant to tell them apart.
-      </p>
-      <p className="mt-3 text-small leading-relaxed text-sage">
-        It will not recommend a spray or a rate. Those decisions are
-        crop-specific and, in California, need a permit and a written
-        recommendation from a licensed PCA — so it will point you to your local
-        extension office instead.
-      </p>
-    </section>
+    <>
+      <section className="mb-4 rounded-2xl border border-cream-edge bg-cream p-5">
+        <h1 className="display-face text-title leading-tight text-vine">
+          What is wrong with my plant?
+        </h1>
+        <p className="mt-2 text-small leading-relaxed text-sage">
+          Take a photo of the leaf, vine or fruit that is bothering you. You get
+          the most likely cause, what else it could be, and what to go and check
+          in the patch.
+        </p>
+        <p className="mt-3 text-tiny leading-[1.6] text-sage">
+          It will not name a product or a rate. That is on purpose — what is
+          legal to apply depends on the crop, the county and the label, and in
+          California most agricultural pesticide use needs a written
+          recommendation from a licensed PCA. {DIAGNOSE_DISCLAIMER}
+        </p>
+      </section>
+
+      <DiagnoseForm />
+    </>
   );
 }
