@@ -74,6 +74,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               what makes a pumpkin heavy or light to the chart, and you cannot
               see it from outside. Your measurements stay in this browser.
             </p>
+            <p className="mt-3 text-tiny leading-relaxed text-cream/55">
+              The projection uses a generic growth curve and assumes typical
+              maturity timing. Individual fruit vary widely, and a pumpkin that
+              colors up early will usually finish below its projection. In hot
+              climates plants often decline before the growth curve completes,
+              so projections without an end date tend to run high.
+            </p>
             <p className="mt-3 text-micro tracking-wide text-cream/40 uppercase">
               Built by AgOptics · Tulare, California
             </p>

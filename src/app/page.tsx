@@ -6,6 +6,12 @@ import EnterLeaderboard, {
 } from "@/components/EnterLeaderboard";
 import PumpkinDiagram, { type TapeKey } from "@/components/PumpkinDiagram";
 import { milestoneMessage } from "@/lib/milestones";
+import {
+  MAX_DAP,
+  PROJECTION_TOLERANCE,
+  projectFinalWeight,
+  roundProjection,
+} from "@/lib/projection";
 import { daysBetween, lbPerDay, ottWeight, totalOtt, weightRange } from "@/lib/ott";
 
 /**
@@ -37,6 +43,9 @@ type Fruit = {
   id: string;
   name: string;
   entries: Entry[];
+  /** ISO yyyy-mm-dd. Optional: fruit saved before projection existed has neither. */
+  pollinationDate?: string;
+  expectedEndDate?: string;
 };
 
 type Patch = {
@@ -112,6 +121,12 @@ function parsePatch(raw: string | null): Patch {
         id: typeof f.id === "string" ? f.id : `${SEED_ID}-${i}`,
         name: typeof f.name === "string" ? f.name : `Pumpkin ${i + 1}`,
         entries: Array.isArray(f.entries) ? f.entries.filter(isEntry) : [],
+        ...(typeof f.pollinationDate === "string" && f.pollinationDate
+          ? { pollinationDate: f.pollinationDate }
+          : {}),
+        ...(typeof f.expectedEndDate === "string" && f.expectedEndDate
+          ? { expectedEndDate: f.expectedEndDate }
+          : {}),
       }));
 
     if (clean.length === 0) return seedPatch();
@@ -289,6 +304,27 @@ export default function CalculatorPage() {
     return { rate, days, since: previous.date };
   }, [active]);
 
+  const projection = useMemo(() => {
+    const last = active.entries[active.entries.length - 1];
+    if (!active.pollinationDate || !last) return null;
+
+    // DAP runs to the measurement's own date so the projection matches the
+    // weight it is built from, not whatever today happens to be.
+    const dap = daysBetween(active.pollinationDate, last.date);
+    const endDap = active.expectedEndDate
+      ? daysBetween(active.pollinationDate, active.expectedEndDate)
+      : null;
+
+    const result = projectFinalWeight(last.lbs, dap, endDap);
+    if (!result) return null;
+    return {
+      ...result,
+      dap,
+      endDap,
+      clamped: endDap !== null && endDap < MAX_DAP,
+    };
+  }, [active]);
+
   const latestMeasurement: LatestMeasurement | null = useMemo(() => {
     const last = active.entries[active.entries.length - 1];
     if (!last) return null;
@@ -393,6 +429,43 @@ export default function CalculatorPage() {
 
         <div className="mt-3">
           <PumpkinDiagram active={activeTape} filled={filled} />
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-2.5 border-t border-cream-edge pt-4">
+          <div>
+            <label htmlFor="pollination" className="mb-1 block text-tiny text-sage">
+              Pollination date
+            </label>
+            <input
+              id="pollination"
+              type="date"
+              value={active.pollinationDate ?? ""}
+              onChange={(e) =>
+                updateActiveFruit((fruit) => ({
+                  ...fruit,
+                  pollinationDate: e.target.value || undefined,
+                }))
+              }
+              className="numerals w-full rounded-xl border-2 border-cream-edge bg-white px-2.5 py-2 text-tiny text-ink"
+            />
+          </div>
+          <div>
+            <label htmlFor="end-date" className="mb-1 block text-tiny text-sage">
+              Expected end <span className="text-sage/70">(optional)</span>
+            </label>
+            <input
+              id="end-date"
+              type="date"
+              value={active.expectedEndDate ?? ""}
+              onChange={(e) =>
+                updateActiveFruit((fruit) => ({
+                  ...fruit,
+                  expectedEndDate: e.target.value || undefined,
+                }))
+              }
+              className="numerals w-full rounded-xl border-2 border-cream-edge bg-white px-2.5 py-2 text-tiny text-ink"
+            />
+          </div>
         </div>
 
         <div className="mt-2">
@@ -535,6 +608,47 @@ export default function CalculatorPage() {
                     {shortDate(growth.since)}
                   </span>
                 </p>
+              )}
+
+              {projection ? (
+                <div className="mb-4 rounded-xl bg-vine px-4 py-3 text-cream">
+                  <p className={EYEBROW + " text-cream/60"}>
+                    Projected final weight
+                  </p>
+                  <p className="numerals text-title font-semibold text-gold">
+                    {roundProjection(projection.projectedLbs).toLocaleString("en-US")}
+                    <span className="ml-1.5 text-tiny font-normal text-cream/70">
+                      lb
+                    </span>
+                  </p>
+                  <p className="numerals mt-0.5 text-tiny text-cream/70">
+                    {roundProjection(
+                      projection.projectedLbs * (1 - PROJECTION_TOLERANCE),
+                    ).toLocaleString("en-US")}
+                    –
+                    {roundProjection(
+                      projection.projectedLbs * (1 + PROJECTION_TOLERANCE),
+                    ).toLocaleString("en-US")}{" "}
+                    lb
+                  </p>
+                  <p className="mt-1.5 text-tiny text-cream/70">
+                    Day {projection.dap} after pollination, about{" "}
+                    {Math.round(projection.fractionComplete * 100)}% of final
+                    weight.
+                  </p>
+                  {projection.clamped && (
+                    <p className="mt-1 text-tiny text-cream/70">
+                      Projected to day {projection.endDap} end date, not full
+                      maturity.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                !active.pollinationDate && (
+                  <p className="mb-4 text-tiny leading-relaxed text-sage">
+                    Add a pollination date to see a projected final weight.
+                  </p>
+                )
               )}
 
               <table className="w-full border-collapse">
