@@ -12,9 +12,10 @@ Vercel.
 | Route          | State       | Notes                                                     |
 | -------------- | ----------- | --------------------------------------------------------- |
 | `/`            | Working     | Calculator, multi-fruit patch, dated log, lb/day growth   |
-| `/leaderboard` | Placeholder | Will read submitted entries from Supabase                 |
+| `/leaderboard` | Working     | Ranked by measured OTT; one row per pumpkin               |
 | `/diagnose`    | Placeholder | Will read a fruit's history for heavy/light-to-chart trends |
-| `/api/*`       | Empty       | Route handlers land here                                  |
+| `/api/leaderboard/auth`    | Working | Exchange the patch passcode for a session cookie   |
+| `/api/leaderboard/entries` | Working | Validated, passcode-gated insert                   |
 
 The calculator's measurement log is **local to the browser**
 (`localStorage`, key `agoptics-ott-v1`). It is not synced and not sent
@@ -75,12 +76,30 @@ they are constructed without credentials, so leaderboard work needs a real
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. **Project Settings → Data API** for the project URL.
-3. **Project Settings → API Keys** for the `anon` and `service_role` keys.
-4. Paste all three into `.env.local`.
+3. **Project Settings → API Keys** for the publishable (`sb_publishable_…`) and
+   secret (`sb_secret_…`) keys. These replace the legacy JWT `anon` and
+   `service_role` keys; the env var names still say `ANON_KEY` and
+   `SERVICE_ROLE_KEY` because they name the role, not the key format.
+4. Paste all three into `.env.local`, plus a `LEADERBOARD_PASSCODE`.
+5. Apply the schema — see below.
 
-Row Level Security is what protects the data from the anon key. Enable it on
-every table the browser can reach, and write the policies before the first
-public deploy.
+### Applying the schema
+
+There is no local Supabase CLI in this project; everything is cloud. Print the
+migration and paste it into the dashboard:
+
+```bash
+npm run migration:print
+```
+
+Then **SQL Editor → New query → paste → Run**. The migration creates the
+`entries` table, its indexes, RLS with a select-only policy for anon, and the
+`leaderboard_current` view.
+
+Row Level Security is what protects the data. Anon gets `SELECT` and nothing
+else; there is deliberately no insert policy, because every write goes through
+`/api/leaderboard/entries` on the secret key, which bypasses RLS. That route is
+the only thing in the app that may use the secret key.
 
 ### Commands
 

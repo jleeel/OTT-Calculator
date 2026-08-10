@@ -12,13 +12,45 @@ import { cookies } from "next/headers";
  * service role key into the browser bundle.
  */
 
+/** Without these two, nothing on the server side of this app can work. */
+const REQUIRED_ENV = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "SUPABASE_SERVICE_ROLE_KEY",
+] as const;
+
+function missingEnv(names: readonly string[]): string[] {
+  return names.filter((name) => !process.env[name]?.trim());
+}
+
+function envError(missing: string[]): Error {
+  const plural = missing.length > 1;
+  return new Error(
+    `Supabase server client is missing required environment ` +
+      `${plural ? "variables" : "variable"}: ${missing.join(", ")}.\n` +
+      `Copy .env.local.example to .env.local and fill ${plural ? "them" : "it"} in ` +
+      `(local), or set ${plural ? "them" : "it"} under Project Settings -> ` +
+      `Environment Variables (Vercel). Values come from the Supabase dashboard: ` +
+      `Project Settings -> Data API for the URL, Project Settings -> API Keys for ` +
+      `the secret key.`,
+  );
+}
+
+/**
+ * Startup guard. Fails loudly at import time rather than at the first request,
+ * so a misconfigured deploy breaks immediately and names what is missing.
+ *
+ * Skipped during `next build`: the build imports route modules to collect
+ * metadata without ever serving a request, and Vercel injects runtime env
+ * separately from build env. A build should not require production secrets.
+ */
+if (process.env.NEXT_PHASE !== "phase-production-build") {
+  const missing = missingEnv(REQUIRED_ENV);
+  if (missing.length > 0) throw envError(missing);
+}
+
 function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(
-      `Missing ${name}. Copy .env.local.example to .env.local and fill it in.`,
-    );
-  }
+  const value = process.env[name]?.trim();
+  if (!value) throw envError([name]);
   return value;
 }
 
@@ -26,9 +58,8 @@ function requireEnv(name: string): string {
  * Service role client — **bypasses Row Level Security entirely**.
  *
  * Use it only in route handlers and server actions that have already checked
- * the caller is allowed to do what they are asking: writing verified
- * leaderboard entries, admin cleanup, backfills. Never hand its results
- * straight back to an untrusted caller without filtering.
+ * the caller is allowed to do what they are asking. In this app that means
+ * exactly one place: the passcode-gated leaderboard insert.
  */
 export function createServiceRoleClient() {
   return createSupabaseClient(
@@ -43,9 +74,9 @@ export function createServiceRoleClient() {
 }
 
 /**
- * Cookie-bound client using the anon key. Respects Row Level Security and
- * sees whatever session the request carries — the right default for reading
- * the leaderboard from a server component.
+ * Cookie-bound client using the publishable key. Respects Row Level Security
+ * and sees whatever session the request carries — the right default for
+ * reading the leaderboard from a server component.
  */
 export async function createServerSupabaseClient() {
   const cookieStore = await cookies();
