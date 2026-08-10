@@ -81,6 +81,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               climates plants often decline before the growth curve completes,
               so projections without an end date tend to run high.
             </p>
+            <p className="mt-3 text-tiny leading-relaxed text-cream/55">
+              Crop coefficients for giant pumpkins are estimated from
+              commercial cucurbit values and have not been validated on
+              single-plant patches. Soil water holding capacity varies widely
+              within a soil type. Use this as a scheduling aid, not a
+              substitute for checking soil moisture at root depth.
+            </p>
             <p className="mt-3 text-micro tracking-wide text-cream/40 uppercase">
               Built by AgOptics · Tulare, California
             </p>

@@ -4,7 +4,14 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import EnterLeaderboard, {
   type LatestMeasurement,
 } from "@/components/EnterLeaderboard";
+import Irrigation from "@/components/Irrigation";
 import PumpkinDiagram, { type TapeKey } from "@/components/PumpkinDiagram";
+import type { IrrigationEvent } from "@/lib/irrigation/balance";
+import {
+  DEFAULT_SETUP,
+  parseIrrigation,
+  type IrrigationState,
+} from "@/lib/irrigation/setup";
 import { milestoneMessage } from "@/lib/milestones";
 import {
   MAX_DAP,
@@ -46,6 +53,8 @@ type Fruit = {
   /** ISO yyyy-mm-dd. Optional: fruit saved before projection existed has neither. */
   pollinationDate?: string;
   expectedEndDate?: string;
+  /** Optional: a fruit saved before irrigation existed has no key at all. */
+  irrigation?: IrrigationState;
 };
 
 type Patch = {
@@ -126,6 +135,11 @@ function parsePatch(raw: string | null): Patch {
           : {}),
         ...(typeof f.expectedEndDate === "string" && f.expectedEndDate
           ? { expectedEndDate: f.expectedEndDate }
+          : {}),
+        // Absent stays absent, so a fruit from before this feature is not
+        // rewritten with defaults the grower never chose.
+        ...(parseIrrigation(f.irrigation)
+          ? { irrigation: parseIrrigation(f.irrigation) as IrrigationState }
           : {}),
       }));
 
@@ -344,6 +358,24 @@ export default function CalculatorPage() {
         f.id === getSnapshot().activeId ? updater(f) : f,
       ),
     });
+  }
+
+  /** Irrigation state is created on first touch, not seeded onto every fruit. */
+  function setIrrigationSetup(setup: IrrigationState["setup"]) {
+    updateActiveFruit((fruit) => ({
+      ...fruit,
+      irrigation: { setup, events: fruit.irrigation?.events ?? [] },
+    }));
+  }
+
+  function setIrrigationEvents(events: IrrigationEvent[]) {
+    updateActiveFruit((fruit) => ({
+      ...fruit,
+      irrigation: {
+        setup: fruit.irrigation?.setup ?? DEFAULT_SETUP,
+        events,
+      },
+    }));
   }
 
   function addFruit() {
@@ -580,6 +612,20 @@ export default function CalculatorPage() {
           </>
         )}
       </div>
+
+      {/*
+        Watering is a daily decision, so it sits at the top level next to the
+        weight rather than inside History with the log. Setup is a collapsed
+        disclosure because it is filled in once a season.
+      */}
+      <Irrigation
+        setup={active.irrigation?.setup ?? DEFAULT_SETUP}
+        events={active.irrigation?.events ?? []}
+        pollinationDate={active.pollinationDate ?? null}
+        dap={projection ? projection.dap : null}
+        onSetupChange={setIrrigationSetup}
+        onEventsChange={setIrrigationEvents}
+      />
 
       <details open={active.entries.length > 0} className="rounded-2xl bg-cream/95">
         <summary className="flex items-center justify-between gap-3 px-5 py-4">
