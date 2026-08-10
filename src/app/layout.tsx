@@ -26,13 +26,18 @@ const plexMono = IBM_Plex_Mono({
 
 /**
  * Canonical origin, needed so the Open Graph image resolves to an absolute URL
- * — Facebook and iMessage will not follow a relative one. Falls back to the
- * Vercel deployment so a preview build still produces working cards; set
- * NEXT_PUBLIC_SITE_URL once the real subdomain exists.
+ * — Facebook and iMessage will not follow a relative one.
+ *
+ * The real domain lives here rather than only in a Vercel environment variable.
+ * It is not a secret, it changes about once, and a dashboard setting that has
+ * to be remembered on every new environment is a worse failure mode than a
+ * constant: forget it and every shared link previews against the wrong host,
+ * silently. NEXT_PUBLIC_SITE_URL still overrides, for a staging domain or if
+ * this moves again.
  */
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "") ??
-  "https://ott-calculator-8kso.vercel.app";
+  "https://pumpkin.agoptics.ai";
 
 const DESCRIPTION =
   "Measure your giant pumpkin with a tape and get its estimated weight, then watch it grow through the season.";

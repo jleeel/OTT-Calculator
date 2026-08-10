@@ -141,7 +141,7 @@ Preview, and Development:
 | `LEADERBOARD_PASSCODE`          | **Secret**  | `openssl rand -base64 32`                                 |
 | `ADMIN_PASSCODE`                | **Secret**  | Removing any entry; that route 503s without it            |
 | `ANTHROPIC_API_KEY`             | **Secret**  | Read by `/api/diagnose`; without it that page says so     |
-| `NEXT_PUBLIC_SITE_URL`          | Public      | Your production URL, e.g. `https://ott.example.com`       |
+| `NEXT_PUBLIC_SITE_URL`          | Public      | Optional; layout.tsx already defaults to the live domain  |
 
 Anything prefixed `NEXT_PUBLIC_` is compiled into the browser bundle and is
 readable by anyone who loads the site. The two secrets must never carry that
