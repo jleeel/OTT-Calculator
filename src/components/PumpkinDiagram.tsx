@@ -1,24 +1,17 @@
 "use client";
 
 /**
- * The teaching element. Three tape paths drawn over a pumpkin, so a first-year
- * grower can see which wrap each measurement means.
+ * The teaching element, built to match the supplied design reference: a scene
+ * rather than a floating object — dark soil, leaves either side, a bright
+ * orange fruit sitting in the patch — with the three tape wraps drawn over it.
  *
- * Focused input  -> its tape draws in and highlights in pumpkin orange
- * Already filled -> persistent gold path
- * Neither        -> quiet sage
+ * Colour is identity, not state. Each measurement keeps its own colour in its
+ * chip, its input border and its tape: 1 green, 2 blue, 3 orange. Focusing an
+ * input draws its tape in and brings it to full weight; the other two stay
+ * present but quieter, so all three can be read at once.
  *
- * On the drawing: this is an Atlantic Giant, not a carving pumpkin. Competition
- * fruit grows so fast the ribs stretch into broad soft folds, and it slumps and
- * spreads under its own weight — roughly twice as wide as it is tall, flat
- * where it sits, with a bumpy irregular outline and a stubby cut stem in a
- * dish. The outline is drawn with deliberate lumps rather than a smooth oval;
- * a clean dome reads as a bread roll, and neat symmetrical lobes read as a
- * jack-o-lantern. Skin is a muted buff-orange because show fruit runs pale,
- * which also lets the tapes carry the contrast.
- *
- * Every tape rides on a vine keyline so it reads as lying on the fruit instead
- * of merging into the folds beneath it.
+ * The body is drawn round and full with strong vertical ribs, which is what the
+ * reference photograph shows — earlier passes flattened it into a bread roll.
  *
  * The draw animation is a CSS keyframe on a keyed element, so refocusing an
  * input replays it. `prefers-reduced-motion` collapses the duration globally
@@ -32,28 +25,30 @@ type Props = {
   filled: Record<TapeKey, boolean>;
 };
 
-/**
- * Lumpy and asymmetric on purpose. Each segment bulges a little differently,
- * so the silhouette has shoulders and dents instead of one smooth arc.
- */
-const BODY =
-  "M 36 186 C 31 164, 42 138, 62 121 " +
-  "C 80 105, 106 95, 134 92 " +
-  "C 158 89, 182 91, 204 99 " +
-  "C 228 108, 249 121, 264 139 " +
-  "C 279 158, 287 178, 280 195 " +
-  "C 271 209, 244 217, 206 219 " +
-  "C 166 222, 122 221, 88 216 " +
-  "C 60 212, 40 202, 36 186 Z";
+const TAPE_COLOR: Record<TapeKey, string> = {
+  c: "var(--color-tape-1)",
+  ss: "var(--color-tape-2)",
+  ee: "var(--color-tape-3)",
+};
 
-/** Broad soft folds and slump creases. Irregular spacing, varied weight. */
-const FOLDS = [
-  { d: "M 156 100 C 126 124, 102 158, 96 200", w: 2.3, o: 0.2 },
-  { d: "M 163 99 C 154 138, 150 180, 154 219", w: 1.7, o: 0.15 },
-  { d: "M 170 100 C 190 132, 206 170, 212 210", w: 2.5, o: 0.2 },
-  { d: "M 176 103 C 212 120, 246 146, 268 180", w: 2, o: 0.17 },
-  { d: "M 148 100 C 112 112, 74 130, 48 160", w: 2.1, o: 0.17 },
-  { d: "M 58 198 C 108 210, 176 213, 240 202", w: 1.6, o: 0.12 },
+/** Full and round with a softly irregular edge — not a smooth ellipse. */
+const BODY =
+  "M 72 140 C 71 102, 112 66, 170 65 " +
+  "C 229 64, 269 101, 268 140 " +
+  "C 267 180, 228 207, 170 207 " +
+  "C 112 207, 73 180, 72 140 Z";
+
+/**
+ * Vertical ribs. For a quadratic with equal endpoints the curve's midpoint is
+ * (endpoint + control) / 2, so the control x is solved backwards from where
+ * each rib should actually bulge to.
+ */
+const RIBS = [
+  { d: "M 170 76 Q 170 140 170 200", w: 2.2 },
+  { d: "M 179 78 Q 214 140 179 198", w: 2 },
+  { d: "M 161 78 Q 126 140 161 198", w: 2 },
+  { d: "M 189 86 Q 254 140 189 192", w: 1.7 },
+  { d: "M 151 86 Q 86 140 151 192", w: 1.7 },
 ];
 
 const TAPES: {
@@ -66,159 +61,205 @@ const TAPES: {
   {
     key: "ss",
     label: "2",
-    front: "M 66 212 C 36 180, 52 108, 140 94 C 226 82, 288 136, 262 210",
-    chip: [255, 134],
+    front: "M 54 214 C 32 146, 86 44, 170 44 C 254 44, 308 146, 286 214",
+    chip: [170, 44],
   },
   {
     key: "ee",
     label: "3",
-    front: "M 126 220 C 82 198, 56 130, 138 92",
-    behind: "M 138 92 C 214 74, 282 116, 288 162",
-    chip: [85, 162],
+    front: "M 80 178 C 84 116, 124 88, 170 88 C 216 88, 256 116, 260 178",
+    chip: [170, 88],
   },
   {
     key: "c",
     label: "1",
-    front: "M 34 180 C 46 202, 104 210, 158 210 C 214 210, 270 198, 283 178",
-    behind: "M 34 180 C 46 158, 104 148, 158 148 C 214 148, 270 158, 283 178",
-    chip: [158, 210],
+    front: "M 72 140 C 78 172, 114 186, 170 186 C 226 186, 262 172, 268 140",
+    behind: "M 72 140 C 78 112, 114 100, 170 100 C 226 100, 262 112, 268 140",
+    chip: [170, 186],
   },
 ];
 
-const TAPE_COLOR: Record<TapeKey, string> = {
-  c: "var(--color-tape-1)",
-  ss: "var(--color-tape-2)",
-  ee: "var(--color-tape-3)",
-};
+/** One stylised pumpkin leaf. */
+function Leaf({
+  x,
+  y,
+  scale,
+  flip,
+  tone,
+}: {
+  x: number;
+  y: number;
+  scale: number;
+  flip?: boolean;
+  tone: string;
+}) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${flip ? -scale : scale} ${scale})`}>
+      <path
+        d="M 0 0 C -14 -4, -26 -14, -28 -28 C -14 -34, 2 -30, 10 -20
+           C 16 -28, 28 -30, 36 -24 C 34 -10, 20 -1, 4 1 Z"
+        fill={tone}
+      />
+      <path
+        d="M 2 0 C -6 -8, -14 -16, -22 -24 M 4 -2 C 10 -10, 18 -18, 28 -22"
+        fill="none"
+        stroke="#1F3D2B"
+        strokeOpacity="0.35"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </g>
+  );
+}
 
 export default function PumpkinDiagram({ active, filled }: Props) {
   return (
     <svg
-      viewBox="0 0 320 236"
-      className="mx-auto block max-h-[208px] w-full"
+      viewBox="0 0 340 240"
+      className="block w-full rounded-xl"
       role="img"
-      aria-label="A giant pumpkin with the three tape measurements drawn over it: a band around the widest point, a wrap from the ground over the top and back down across the vine, and a wrap from the ground over the top from stem to blossom."
+      aria-label="A giant pumpkin growing in the patch, with the three tape measurements drawn over it: a band around the widest point, a wrap from the ground over the top and back down across the vine, and a wrap over the top from the stem end to the blossom end."
     >
       <defs>
+        <clipPath id="scene">
+          <rect x="0" y="0" width="340" height="240" rx="12" />
+        </clipPath>
         <clipPath id="pumpkin-body">
           <path d={BODY} />
         </clipPath>
-        {/* Light off the upper left shoulder, shade into the lower right. */}
-        <radialGradient id="pumpkin-skin" cx="34%" cy="28%" r="88%">
-          <stop offset="0%" stopColor="#F5C079" />
-          <stop offset="52%" stopColor="#E7A85E" />
-          <stop offset="100%" stopColor="#C57F38" />
-        </radialGradient>
       </defs>
 
-      <line
-        x1="14" y1="217" x2="306" y2="217"
-        stroke="var(--color-sage)" strokeOpacity="0.45"
-        strokeWidth="1.5" strokeLinecap="round"
-      />
-      <ellipse cx="158" cy="216" rx="120" ry="7" fill="var(--color-ink)" opacity="0.14" />
+      <g clipPath="url(#scene)">
+        <rect x="0" y="0" width="340" height="240" fill="#F6EEDC" />
 
-      {/* stubby cut stem, thick at the shoulder */}
-      <g>
+        {/* soil */}
         <path
-          d="M 154 97 C 153 86, 151 78, 148 70 C 146 63, 156 60, 163 63
-             C 170 66, 174 78, 176 97 Z"
-          fill="var(--color-vine)"
+          d="M 0 196 C 60 188, 120 192, 170 191 C 226 190, 288 187, 340 194 L 340 240 L 0 240 Z"
+          fill="#4A331E"
         />
         <path
-          d="M 158 94 C 157 84, 156 76, 154 69"
-          fill="none" stroke="#2F5A3F" strokeWidth="1.7" strokeLinecap="round"
+          d="M 0 201 C 70 195, 130 199, 190 197 C 250 195, 300 194, 340 200"
+          fill="none"
+          stroke="#65472A"
+          strokeWidth="3"
+          strokeLinecap="round"
         />
-        <path
-          d="M 167 94 C 166 86, 165 80, 163 73"
-          fill="none" stroke="#2F5A3F" strokeWidth="1.4" strokeLinecap="round"
-        />
-      </g>
 
-      <g clipPath="url(#pumpkin-body)">
-        <path d={BODY} fill="url(#pumpkin-skin)" />
-        {FOLDS.map((f) => (
+        {/* leaves either side, tucked behind the fruit */}
+        <Leaf x={54} y={201} scale={1.5} tone="#4C8A61" />
+        <Leaf x={22} y={210} scale={1.2} tone="#3A6E4B" />
+        <Leaf x={288} y={201} scale={1.5} flip tone="#4C8A61" />
+        <Leaf x={320} y={210} scale={1.2} flip tone="#3A6E4B" />
+
+        {/* stem off the upper left shoulder, as in the reference */}
+        <path
+          d="M 92 108 C 80 98, 68 92, 56 92 C 50 92, 48 100, 54 103
+             C 66 108, 78 116, 88 126 Z"
+          fill="#8A7A3C"
+        />
+        <path
+          d="M 88 110 C 78 102, 68 98, 60 97"
+          fill="none"
+          stroke="#6B5D2C"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+
+        {/* fruit */}
+        <path d={BODY} fill="#E58230" />
+        <g clipPath="url(#pumpkin-body)">
+          <ellipse cx="128" cy="108" rx="62" ry="38" fill="#F2A254" opacity="0.55" />
           <path
-            key={f.d}
-            d={f.d}
-            fill="none"
-            stroke="var(--color-vine)"
-            strokeOpacity={f.o}
-            strokeWidth={f.w}
-            strokeLinecap="round"
+            d="M 214 60 C 262 84, 292 130, 292 208 L 300 250 L 150 250 Z"
+            fill="#C1651A"
+            opacity="0.4"
           />
-        ))}
-      </g>
+          {RIBS.map((r) => (
+            <path
+              key={r.d}
+              d={r.d}
+              fill="none"
+              stroke="#B85C15"
+              strokeOpacity="0.5"
+              strokeWidth={r.w}
+              strokeLinecap="round"
+            />
+          ))}
+        </g>
+        <path d={BODY} fill="none" stroke="#A9520F" strokeOpacity="0.75" strokeWidth="2" />
 
-      {/* the dish the stem sits in */}
-      <path
-        d="M 136 103 C 148 94, 180 94, 194 105"
-        fill="none" stroke="var(--color-vine)" strokeOpacity="0.3"
-        strokeWidth="1.8" strokeLinecap="round"
-      />
+        {/* blossom scar */}
+        <ellipse cx="266" cy="146" rx="7" ry="9" fill="#C1651A" opacity="0.5" />
 
-      <path d={BODY} fill="none" stroke="var(--color-vine)" strokeOpacity="0.85" strokeWidth="2.4" />
+        <ellipse cx="170" cy="204" rx="94" ry="9" fill="#2A1A0C" opacity="0.3" />
 
-      {TAPES.map((tape) => {
-        const isActive = active === tape.key;
-        const isFilled = filled[tape.key];
-        const color = TAPE_COLOR[tape.key];
-        // Colour never changes — focus and completion change presence only.
-        const width = isActive ? 5.2 : isFilled ? 4 : 3;
-        const opacity = isActive ? 1 : isFilled ? 0.95 : 0.62;
+        {TAPES.map((tape) => {
+          const isActive = active === tape.key;
+          const isFilled = filled[tape.key];
+          const color = TAPE_COLOR[tape.key];
+          const width = isActive ? 4.6 : isFilled ? 3.6 : 2.8;
+          const opacity = isActive ? 1 : isFilled ? 0.95 : 0.7;
 
-        return (
-          <g key={tape.key}>
-            {tape.behind && (
+          return (
+            <g key={tape.key}>
+              {tape.behind && (
+                <path
+                  d={tape.behind}
+                  fill="none"
+                  stroke={color}
+                  strokeOpacity={opacity * 0.55}
+                  strokeWidth={width * 0.8}
+                  strokeDasharray="6 7"
+                  strokeLinecap="round"
+                />
+              )}
+
+              {/* cream casing keeps the tape legible over soil, leaf and fruit */}
               <path
-                d={tape.behind}
+                d={tape.front}
                 fill="none"
-                stroke={color}
-                strokeOpacity={opacity * 0.5}
-                strokeWidth={width * 0.7}
-                strokeDasharray="5 7"
+                stroke="#F6EEDC"
+                strokeOpacity="0.85"
+                strokeWidth={width + 3.2}
                 strokeLinecap="round"
               />
-            )}
+              <path
+                key={`${tape.key}-${isActive}`}
+                d={tape.front}
+                fill="none"
+                stroke={color}
+                strokeOpacity={opacity}
+                strokeWidth={width}
+                strokeLinecap="round"
+                pathLength={1}
+                className={isActive ? "tape-draw" : undefined}
+              />
 
-            <path
-              d={tape.front}
-              fill="none"
-              stroke="var(--color-vine)"
-              strokeOpacity="0.9"
-              strokeWidth={width + 2.6}
-              strokeLinecap="round"
-            />
-            <path
-              key={`${tape.key}-${isActive}`}
-              d={tape.front}
-              fill="none"
-              stroke={color}
-              strokeOpacity={opacity}
-              strokeWidth={width}
-              strokeLinecap="round"
-              pathLength={1}
-              className={isActive ? "tape-draw" : undefined}
-            />
-
-            <circle
-              cx={tape.chip[0]} cy={tape.chip[1]} r="11.5"
-              fill={color}
-              stroke="var(--color-cream)"
-              strokeWidth="2.5"
-            />
-            <text
-              x={tape.chip[0]} y={tape.chip[1]}
-              textAnchor="middle" dominantBaseline="central"
-              fontSize="12.5" fontWeight="600"
-              fill="var(--color-cream)"
-              fontFamily="var(--font-mono)"
-            >
-              {tape.label}
-            </text>
-          </g>
-        );
-      })}
+              <circle
+                cx={tape.chip[0]}
+                cy={tape.chip[1]}
+                r="13"
+                fill={color}
+                stroke="#F6EEDC"
+                strokeWidth="2.5"
+                opacity={opacity}
+              />
+              <text
+                x={tape.chip[0]}
+                y={tape.chip[1]}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize="13"
+                fontWeight="700"
+                fill="#F6EEDC"
+                fontFamily="var(--font-display)"
+              >
+                {tape.label}
+              </text>
+            </g>
+          );
+        })}
+      </g>
     </svg>
   );
 }

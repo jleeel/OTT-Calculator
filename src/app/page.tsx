@@ -374,14 +374,24 @@ export default function CalculatorPage() {
       )}
 
       <section className={CARD}>
-        <h1 className="display-face text-title leading-tight font-semibold text-vine">
+        <h1 className="display-face text-center text-title leading-tight text-vine">
           {manyFruit ? active.name || "Untitled" : "Measure your pumpkin"}
         </h1>
-        <p className="mt-1 text-tiny leading-relaxed text-sage">
+        <p className="mx-auto mt-1 max-w-[30ch] text-center text-tiny leading-relaxed text-sage">
           Run a tape around it three ways. Tap a box to see where that one goes.
         </p>
 
-        <div className="mt-3 -mx-1">
+        <div className="mt-3 flex items-center gap-3" aria-hidden>
+          <span className="h-px flex-1 bg-cream-edge" />
+          <svg viewBox="0 0 20 20" className="h-4 w-4 text-[var(--color-tape-3)]" fill="currentColor">
+            <ellipse cx="10" cy="12" rx="7.5" ry="6" />
+            <ellipse cx="10" cy="12" rx="2.6" ry="6" fill="#F2A254" opacity=".5" />
+            <path d="M9.2 6.4C9 4.6 8.4 3.6 7.4 2.8c1.6-.4 2.8.5 3.3 1.9.5-1 1.4-1.5 2.3-1.3-.9 1-1.4 2-1.5 3z" fill="#2F5A3F" />
+          </svg>
+          <span className="h-px flex-1 bg-cream-edge" />
+        </div>
+
+        <div className="mt-3">
           <PumpkinDiagram active={activeTape} filled={filled} />
         </div>
 
@@ -617,14 +627,17 @@ export default function CalculatorPage() {
         content scroll out from under it cleanly.
       */}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40">
-        <div className="pointer-events-auto mx-auto max-w-[640px] bg-gradient-to-t from-vine from-75% to-transparent px-4 pt-6 pb-4">
+        <div className="pointer-events-auto mx-auto max-w-[640px] bg-gradient-to-t from-vine from-72% to-transparent px-4 pt-7 pb-4">
           <button
             type="button"
             onClick={saveMeasurement}
             disabled={!complete}
-            className="display-face w-full rounded-full bg-cream px-5 text-lead text-vine shadow-[0_4px_20px_rgba(0,0,0,0.32)] transition-colors disabled:bg-vine-soft disabled:text-cream/45 disabled:shadow-none"
+            className="display-face inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-cream px-5 text-lead text-vine shadow-[0_4px_20px_rgba(0,0,0,0.32)] transition-colors disabled:bg-vine-soft disabled:text-cream/45 disabled:shadow-none"
           >
-            {justSaved ? "Saved to your log" : "Save this measurement"}
+            <svg viewBox="0 0 20 20" className="h-5 w-5 flex-none" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M4 3h9l3 3v11H4z M7 3v5h6V3 M7 17v-5h6v5" />
+          </svg>
+          {justSaved ? "Saved to your log" : "Save this measurement"}
           </button>
         </div>
       </div>

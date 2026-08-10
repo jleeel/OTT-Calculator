@@ -26,7 +26,7 @@ export default function Nav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mt-4 flex gap-2">
+    <nav className="mt-4 flex gap-1.5">
       {NAV.map((item) => {
         const on = pathname === item.href;
         return (
@@ -34,7 +34,7 @@ export default function Nav() {
             key={item.href}
             href={item.href}
             aria-current={on ? "page" : undefined}
-            className={`tap inline-flex items-center gap-1.5 rounded-full border px-3 text-tiny font-medium transition-colors ${
+            className={`tap inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-tiny font-medium transition-colors ${
               on
                 ? "border-vine-soft bg-vine-soft text-cream"
                 : "border-vine-soft text-cream/65 hover:border-gold/60 hover:text-cream"

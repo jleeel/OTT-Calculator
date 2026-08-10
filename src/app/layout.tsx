@@ -45,12 +45,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         <div className="mx-auto flex min-h-screen max-w-[640px] flex-col px-4 pb-8">
           <header className="pt-6 pb-5">
-            <Link href="/" className="tap inline-flex items-baseline gap-2">
-              <span className="display-face text-[1.75rem] leading-none font-semibold text-cream">
+            <Link href="/" className="tap block text-center">
+              <span className="display-face block text-[1.9rem] leading-[0.95] text-cream">
                 Giant Pumpkin
               </span>
-              <span className="display-face text-[1.75rem] leading-none font-semibold text-gold">
-                Calculator
+              <span className="mt-1 flex items-center justify-center gap-2">
+                <svg viewBox="0 0 34 12" className="h-3 w-8 text-[#3F7350]" fill="currentColor" aria-hidden>
+                  <path d="M34 6C26 1 16 0 8 3c3 4 9 6 15 5-5 2-11 2-15 0 5 4 16 4 26-2z" />
+                </svg>
+                <span className="display-face text-[1.9rem] leading-[0.95] text-gold">
+                  Calculator
+                </span>
+                <svg viewBox="0 0 34 12" className="h-3 w-8 scale-x-[-1] text-[#3F7350]" fill="currentColor" aria-hidden>
+                  <path d="M34 6C26 1 16 0 8 3c3 4 9 6 15 5-5 2-11 2-15 0 5 4 16 4 26-2z" />
+                </svg>
               </span>
             </Link>
 
