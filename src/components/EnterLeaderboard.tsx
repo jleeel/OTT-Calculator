@@ -88,7 +88,11 @@ export default function EnterLeaderboard({
 
   useEffect(() => {
     if (open) firstFieldRef.current?.focus();
-  }, [open, form]);
+    // `open` only. `form` was in here too, and it changes on every keystroke —
+    // so typing in Town or Pumpkin name re-ran this and threw the cursor back
+    // to Your name after the first character. Focus belongs to opening the
+    // dialog, not to editing it.
+  }, [open]);
 
   function openDialog() {
     if (!latest) return;
