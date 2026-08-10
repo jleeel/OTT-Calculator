@@ -190,6 +190,7 @@ export default function Irrigation({
       current,
       until,
       recent: past.slice(-7),
+      ahead: forecast.slice(0, 7),
       trigger: balance.trigger,
       taw: balance.taw,
       missingDays: balance.missingDays,
@@ -402,6 +403,15 @@ export default function Irrigation({
                 </span>
               </p>
 
+              {!pollinationDate && (
+                <p className="mt-2 rounded-xl bg-cream-dim px-3.5 py-2.5 text-tiny leading-[1.6] text-ink">
+                  No pollination date set, so this assumes an early-season
+                  plant and uses the lowest crop factor there is. A plant in
+                  full run uses close to twice this. Add the date above and the
+                  figures follow the plant.
+                </p>
+              )}
+
               {view.missingDays > 0 && (
                 <p className="mt-2 text-tiny text-sage">
                   {view.missingDays === 1
@@ -412,7 +422,17 @@ export default function Irrigation({
                 </p>
               )}
 
-              <RecentEt days={view.recent} />
+              <RecentEt days={view.recent} ahead={view.ahead} />
+
+              <p className="mt-3 text-micro leading-[1.5] text-sage">
+                Reference evapotranspiration for{" "}
+                <span className="numerals">
+                  {latitude?.toFixed(3)}, {longitude?.toFixed(3)}
+                </span>{" "}
+                from Open-Meteo, updated once a day. Crop use is that figure
+                scaled by the plant&rsquo;s stage and how much of the patch its
+                leaf covers.
+              </p>
             </>
           )}
 
@@ -466,34 +486,60 @@ function Bar({
   );
 }
 
-/** The last week of crop ET, so the number above has visible working. */
-function RecentEt({ days }: { days: { date: string; etcInches: number }[] }) {
-  if (days.length === 0) return null;
-  const peak = Math.max(...days.map((d) => d.etcInches), 0.01);
+type EtRow = { date: string; etcInches: number };
+
+/**
+ * What the plant used, and what it is forecast to use.
+ *
+ * The forecast half was being computed and used for "water in N days" but never
+ * shown, so there was nothing on screen to say the card knew where the patch
+ * was. The days ahead are the location-based part, so they are the part worth
+ * displaying.
+ */
+function RecentEt({ days, ahead }: { days: EtRow[]; ahead: EtRow[] }) {
+  if (days.length === 0 && ahead.length === 0) return null;
+  const peak = Math.max(
+    ...days.map((d) => d.etcInches),
+    ...ahead.map((d) => d.etcInches),
+    0.01,
+  );
+
+  const row = (day: EtRow, dim: boolean) => (
+    <li key={day.date} className="flex items-center gap-2.5 py-1">
+      <span className="numerals w-11 flex-none text-micro text-sage">
+        {day.date.slice(5)}
+      </span>
+      <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-cream-dim">
+        <span
+          className={`block h-full rounded-full ${dim ? "bg-gold/45" : "bg-gold"}`}
+          style={{ width: `${(day.etcInches / peak) * 100}%` }}
+        />
+      </span>
+      <span className="numerals w-14 flex-none text-right text-micro text-sage">
+        {day.etcInches.toFixed(2)} in
+      </span>
+    </li>
+  );
 
   return (
     <div className="mt-4 border-t border-cream-edge pt-3">
-      <div className="mb-2 text-tiny font-semibold text-vine">
-        What the plant used
-      </div>
-      <ul>
-        {days.map((day) => (
-          <li key={day.date} className="flex items-center gap-2.5 py-1">
-            <span className="numerals w-12 flex-none text-micro text-sage">
-              {day.date.slice(5)}
-            </span>
-            <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-cream-dim">
-              <span
-                className="block h-full rounded-full bg-gold"
-                style={{ width: `${(day.etcInches / peak) * 100}%` }}
-              />
-            </span>
-            <span className="numerals w-14 flex-none text-right text-micro text-sage">
-              {day.etcInches.toFixed(2)} in
-            </span>
-          </li>
-        ))}
-      </ul>
+      {days.length > 0 && (
+        <>
+          <div className="mb-2 text-tiny font-semibold text-vine">
+            What the plant used
+          </div>
+          <ul>{days.map((d) => row(d, false))}</ul>
+        </>
+      )}
+
+      {ahead.length > 0 && (
+        <>
+          <div className="mt-3 mb-2 text-tiny font-semibold text-vine">
+            What the forecast says it will use
+          </div>
+          <ul>{ahead.map((d) => row(d, true))}</ul>
+        </>
+      )}
     </div>
   );
 }
@@ -537,22 +583,27 @@ function IrrigationLog({
         Log a watering
       </div>
 
-      <div className="mb-2.5 flex gap-2.5">
+      {/*
+        Stacked, not side by side. A date input plus a select with long option
+        text overflowed a 375px screen — flex items default to min-width:auto,
+        so the select would not shrink below its longest option.
+      */}
+      <div className="mb-2.5 grid gap-2.5">
         <input
           type="date"
           aria-label="Date watered"
-          className={`${FIELD} numerals flex-none`}
+          className={`${FIELD} numerals w-full`}
           value={date}
           max={todayISO()}
           onChange={(e) => setDate(e.target.value)}
         />
         <select
-          aria-label="How much"
-          className={`${FIELD} flex-1`}
+          aria-label="How much water"
+          className={`${FIELD} w-full min-w-0`}
           value={mode}
           onChange={(e) => setMode(e.target.value as "refill" | "inches")}
         >
-          <option value="refill">Flood / soaked it right through</option>
+          <option value="refill">Soaked it right through</option>
           <option value="inches">A measured amount</option>
         </select>
       </div>
