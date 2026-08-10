@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { insertEntry } from "@/lib/leaderboard/entries";
+import { ImplausibleGrowthError } from "@/lib/leaderboard/flags";
 import {
   OWNER_MAX_AGE_SECONDS,
   ownerCookieName,
@@ -132,6 +133,16 @@ export async function POST(request: Request) {
     });
     return response;
   } catch (error) {
+    // A refused entry is the grower's to fix, not a server fault — 400 with the
+    // reason, not 502 with "try again in a moment", which would have them
+    // retrying identical bad data forever.
+    if (error instanceof ImplausibleGrowthError) {
+      return NextResponse.json(
+        { error: error.message, code: "implausible_growth" },
+        { status: 400 },
+      );
+    }
+
     // The real message can name the database; keep it in the server log.
     console.error("[leaderboard/entries]", error);
     return NextResponse.json(
