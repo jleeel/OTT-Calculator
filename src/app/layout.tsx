@@ -24,10 +24,42 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
+/**
+ * Canonical origin, needed so the Open Graph image resolves to an absolute URL
+ * — Facebook and iMessage will not follow a relative one. Falls back to the
+ * Vercel deployment so a preview build still produces working cards; set
+ * NEXT_PUBLIC_SITE_URL once the real subdomain exists.
+ */
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "") ??
+  "https://ott-calculator-8kso.vercel.app";
+
+const DESCRIPTION =
+  "Measure your giant pumpkin with a tape and get its estimated weight, then watch it grow through the season.";
+
 export const metadata: Metadata = {
-  title: "Giant Pumpkin Calculator",
-  description:
-    "Measure your giant pumpkin with a tape and get its estimated weight, then watch it grow through the season.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Giant Pumpkin Calculator",
+    // Route titles already read "Plant help · Giant Pumpkin Calculator", so a
+    // template here would double the suffix.
+    template: "%s",
+  },
+  description: DESCRIPTION,
+  applicationName: "Giant Pumpkin Calculator",
+  openGraph: {
+    type: "website",
+    siteName: "Giant Pumpkin Calculator",
+    title: "Giant Pumpkin Calculator",
+    description: DESCRIPTION,
+    url: SITE_URL,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Giant Pumpkin Calculator",
+    description: DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {

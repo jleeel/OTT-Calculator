@@ -15,10 +15,15 @@ import { ownerCookieName, verifyOwnership } from "@/lib/leaderboard/ownership";
 import { requirePasscode } from "@/lib/leaderboard/session";
 import { daysBetween, lbPerDay } from "@/lib/ott";
 
+const TITLE = "Leaderboard · Giant Pumpkin Calculator";
+const DESCRIPTION =
+  "Season leaderboard of giant pumpkin measurements, ranked by measured OTT inches.";
+
 export const metadata: Metadata = {
-  title: "Leaderboard · Giant Pumpkin Weight Calculator",
-  description:
-    "Season leaderboard of giant pumpkin measurements, ranked by measured OTT inches.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { title: TITLE, description: DESCRIPTION, url: "/leaderboard" },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 // The board changes whenever someone submits, so it is never prerendered.
