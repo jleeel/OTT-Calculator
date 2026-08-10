@@ -88,6 +88,11 @@ caught by them. Re-derive from the primary GPC chart before changing anything.
   discards the session, so the passcode has to be entered again.
 - RLS gives anon **SELECT only**. There is deliberately no INSERT policy: writes
   go through `/api/leaderboard/entries` on the service role key.
+- **Enabling RLS is not enough on its own.** Supabase's default privileges grant
+  anon the full set on new tables in `public`, including TRUNCATE — and TRUNCATE
+  is not subject to RLS. Migration 0002 revokes them. **Every new table needs the
+  same `revoke all` + `grant select`**, and it must be verified by assuming the
+  anon role and attempting each operation, not by reading the policy.
 - The board reads the **`leaderboard_current` view**, which is `DISTINCT ON
   (grower_name, pumpkin_name)` — PostgREST cannot express that, and it keeps a
   grower who logs weekly from filling the board. It is `security_invoker`, so
