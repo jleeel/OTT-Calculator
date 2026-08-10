@@ -3,7 +3,7 @@ import DiagnoseForm from "@/components/DiagnoseForm";
 import { DIAGNOSE_DISCLAIMER } from "@/lib/diagnose/types";
 
 const DESCRIPTION =
-  "Photograph a giant pumpkin leaf, vine or fruit and get an idea of what is going on with it.";
+  "Photograph a giant pumpkin leaf, vine or fruit and get an idea of what is going on with it — or photograph the bug and find out what it is before you squash it.";
 
 export const metadata: Metadata = {
   title: "Plant help · Giant Pumpkin Calculator",
@@ -25,12 +25,14 @@ export default function DiagnosePage() {
     <>
       <section className="mb-4 rounded-2xl border border-cream-edge bg-cream p-5">
         <h1 className="display-face text-title leading-tight text-vine">
-          What is wrong with my plant?
+          What is going on in the patch?
         </h1>
         <p className="mt-2 text-small leading-relaxed text-sage">
-          Take a photo of the leaf, vine or fruit that is bothering you. You get
-          the most likely cause, what else it could be, and what to go and check
-          in the patch.
+          Photograph the leaf, vine or fruit that is bothering you and get the
+          most likely cause, what else it could be, and what to go and check.
+          Or photograph the bug itself and find out what it is, and whether it
+          is one to deal with or one to leave alone — most of what walks
+          through a pumpkin patch is eating the pests, not the plant.
         </p>
         <p className="mt-3 text-tiny leading-[1.6] text-sage">
           It will not name a product or a rate. That is on purpose — what is

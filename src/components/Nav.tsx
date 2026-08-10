@@ -26,7 +26,10 @@ export default function Nav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mt-4 flex gap-1.5">
+    // Wraps rather than overflowing: the three pills come to 359px, so on a
+    // 320px phone they used to drag the whole page sideways. Found while
+    // measuring the diagnose page, not caused by it.
+    <nav className="mt-4 flex flex-wrap gap-1.5">
       {NAV.map((item) => {
         const on = pathname === item.href;
         return (
