@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
+import RemoveEntry from "@/components/RemoveEntry";
 import {
   STALE_AFTER_DAYS,
+  fetchAllHistory,
   fetchLeaderboard,
+  historyKey,
+  type HistoryRow,
   type LeaderboardRow,
 } from "@/lib/leaderboard/entries";
-import { daysBetween } from "@/lib/ott";
+import { FLAG_NOTE } from "@/lib/leaderboard/flags";
+import { ownerCookieName, verifyOwnership } from "@/lib/leaderboard/ownership";
+import { requirePasscode } from "@/lib/leaderboard/session";
+import { daysBetween, lbPerDay } from "@/lib/ott";
 
 export const metadata: Metadata = {
   title: "Leaderboard · Giant Pumpkin Weight Calculator",
@@ -28,9 +36,16 @@ type Ranked = LeaderboardRow & {
   rank: number;
   daysSince: number;
   stale: boolean;
+  owned: boolean;
+  history: HistoryRow[];
 };
 
-function rank(rows: LeaderboardRow[], today: string): Ranked[] {
+function rank(
+  rows: LeaderboardRow[],
+  today: string,
+  owned: Set<string>,
+  history: Map<string, HistoryRow[]>,
+): Ranked[] {
   return rows.map((row, i) => {
     const daysSince = Math.max(0, daysBetween(row.measured_on, today));
     return {
@@ -38,8 +53,88 @@ function rank(rows: LeaderboardRow[], today: string): Ranked[] {
       rank: i + 1,
       daysSince,
       stale: daysSince > STALE_AFTER_DAYS,
+      owned: owned.has(row.id),
+      history: history.get(historyKey(row.grower_name, row.pumpkin_name)) ?? [],
     };
   });
+}
+
+/** Neutral grey marker. No red, no triangle, no accusation. */
+function FlagMark() {
+  return (
+    <span
+      title={FLAG_NOTE}
+      aria-label={FLAG_NOTE}
+      className="ml-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-cream-edge align-middle text-[10px] font-bold text-sage"
+    >
+      i
+    </span>
+  );
+}
+
+function VerifiedMark({ note }: { note: string | null }) {
+  const label = note
+    ? `Verified grower — ${note}`
+    : "Verified grower";
+  return (
+    <span
+      title={label}
+      aria-label={label}
+      className="ml-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-tape-1)] align-middle text-[10px] font-bold text-cream"
+    >
+      ✓
+    </span>
+  );
+}
+
+/** The real integrity mechanism: one tap to the full measurement history. */
+function History({ rows }: { rows: HistoryRow[] }) {
+  if (rows.length === 0) return null;
+  return (
+    <details className="mt-2">
+      <summary className="inline-flex items-center text-micro font-semibold text-vine underline underline-offset-2">
+        {rows.length} measurement{rows.length === 1 ? "" : "s"} on record
+      </summary>
+      <table className="mt-2 w-full border-collapse">
+        <thead>
+          <tr className="text-micro tracking-wider text-sage uppercase">
+            <th className="pb-1 text-left font-semibold">Date</th>
+            <th className="pb-1 text-right font-semibold">Inches</th>
+            <th className="pb-1 text-right font-semibold">Pounds</th>
+            <th className="pb-1 text-right font-semibold">lb/day</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => {
+            const prev = rows[i - 1];
+            const rate = prev
+              ? lbPerDay(
+                  { date: prev.measured_on, lbs: prev.estimated_lbs },
+                  { date: r.measured_on, lbs: r.estimated_lbs },
+                )
+              : null;
+            return (
+              <tr key={r.id} className="numerals text-tiny">
+                <td className="border-t border-cream-edge py-1.5 text-sage">
+                  {r.measured_on.slice(5)}
+                </td>
+                <td className="border-t border-cream-edge py-1.5 text-right text-sage">
+                  {r.ott.toFixed(1)}
+                </td>
+                <td className="border-t border-cream-edge py-1.5 text-right font-semibold">
+                  {Math.round(r.estimated_lbs).toLocaleString("en-US")}
+                  {r.flags.length > 0 && <FlagMark />}
+                </td>
+                <td className="border-t border-cream-edge py-1.5 text-right text-vine">
+                  {rate === null ? "—" : `${rate >= 0 ? "+" : ""}${rate.toFixed(1)}`}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </details>
+  );
 }
 
 function ago(days: number): string {
@@ -59,7 +154,27 @@ export default async function LeaderboardPage() {
   let loadError: string | null = null;
 
   try {
-    rows = rank(await fetchLeaderboard(), today);
+    const [board, history, store] = await Promise.all([
+      fetchLeaderboard(),
+      fetchAllHistory(),
+      cookies(),
+    ]);
+
+    // Ownership lives in httpOnly cookies the client cannot read, so the
+    // server decides which rows get a remove control.
+    const owned = new Set<string>();
+    try {
+      const secret = requirePasscode();
+      for (const row of board) {
+        if (verifyOwnership(store.get(ownerCookieName(row.id))?.value, secret)) {
+          owned.add(row.id);
+        }
+      }
+    } catch {
+      // Passcode unset: nobody owns anything, board still renders.
+    }
+
+    rows = rank(board, today, owned, history);
   } catch (error) {
     console.error("[leaderboard]", error);
     loadError =
@@ -71,6 +186,10 @@ export default async function LeaderboardPage() {
       <section className={CARD}>
         <h2 className={CARD_TITLE}>Season leaderboard</h2>
         <p className="text-tiny leading-[1.6] text-sage">{HEADER_NOTE}</p>
+        <p className="mt-2 text-tiny leading-[1.6] text-sage">
+          <VerifiedMark note={null} /> Verified growers have had a pumpkin on a
+          scale at a sanctioned weigh-off.
+        </p>
       </section>
 
       {loadError ? (
@@ -140,7 +259,14 @@ export default async function LeaderboardPage() {
                         stale
                       </span>
                     )}
+                    {row.flags.length > 0 && <FlagMark />}
                   </div>
+                  <History rows={row.history} />
+                  {row.owned && (
+                    <div className="mt-1.5">
+                      <RemoveEntry id={row.id} />
+                    </div>
+                  )}
                 </div>
               </li>
             ))}
@@ -179,13 +305,25 @@ export default async function LeaderboardPage() {
                       <td className={`${cell} w-8 numerals`}>{row.rank}</td>
                       <td className={`${cell} font-semibold`}>
                         {row.pumpkin_name}
+                        {row.flags.length > 0 && <FlagMark />}
                         {row.stale && (
                           <span className="ml-2 rounded-full bg-cream-dim px-1.5 py-0.5 text-micro font-semibold text-sage">
                             stale
                           </span>
                         )}
                       </td>
-                      <td className={cell}>{row.grower_name}</td>
+                      <td className={cell}>
+                        {row.grower_name}
+                        {row.grower_verified && (
+                          <VerifiedMark note={row.grower_verified_note} />
+                        )}
+                        <History rows={row.history} />
+                        {row.owned && (
+                          <div className="mt-1.5">
+                            <RemoveEntry id={row.id} />
+                          </div>
+                        )}
+                      </td>
                       <td className={`${cell} text-sage`}>{row.location}</td>
                       <td className={`${cell} text-right font-bold numerals`}>
                         {row.ott.toFixed(1)}&quot;

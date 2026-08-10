@@ -98,6 +98,20 @@ caught by them. Re-derive from the primary GPC chart before changing anything.
   grower who logs weekly from filling the board. It is `security_invoker`, so
   the RLS policy on `entries` still applies.
 
+- `edit_token` must **never** be anon-readable — it is the only proof of
+  ownership for deletion. anon has no SELECT on `entries` at all; it reads the
+  `leaderboard_current` and `entry_history` views, which list columns
+  explicitly and filter `deleted_at is null`.
+- Those two views are **security definer, not `security_invoker`** (migration
+  0004). Invoker semantics require the caller to hold rights on `entries`,
+  which anon deliberately does not. The view definition is the boundary now — if
+  a restrictive per-row policy is ever added to `entries`, revisit them or they
+  will read past it.
+- Deletion is **soft** (`deleted_at`); rows are retained for audit.
+- Plausibility flags are computed on insert and stored in `flags[]`. They never
+  block. The real integrity mechanism is the **public measurement history**,
+  one tap from each board row.
+
 ## Leaderboard layout
 
 ```

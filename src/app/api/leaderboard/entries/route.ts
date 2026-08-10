@@ -2,6 +2,11 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { insertEntry } from "@/lib/leaderboard/entries";
 import {
+  OWNER_MAX_AGE_SECONDS,
+  ownerCookieName,
+  signOwnership,
+} from "@/lib/leaderboard/ownership";
+import {
   RATE_LIMIT_MAX,
   SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
@@ -98,9 +103,25 @@ export async function POST(request: Request) {
   }
 
   try {
-    const entry = await insertEntry(validated.value);
+    const { row: entry, editToken } = await insertEntry(validated.value);
 
-    const response = NextResponse.json({ ok: true, entry }, { status: 201 });
+    const response = NextResponse.json(
+      { ok: true, entry, editToken },
+      { status: 201 },
+    );
+
+    // Ownership of this specific entry, so this browser can remove it later.
+    response.cookies.set(
+      ownerCookieName(entry.id),
+      signOwnership(editToken, secret),
+      {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: OWNER_MAX_AGE_SECONDS,
+      },
+    );
     response.cookies.set(SESSION_COOKIE, signSession(limited.session, secret), {
       httpOnly: true,
       sameSite: "lax",
