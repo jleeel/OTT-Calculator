@@ -1,0 +1,5 @@
+Route handlers live here. Each one is a directory with a route.ts, e.g.
+src/app/api/leaderboard/route.ts -> GET/POST /api/leaderboard
+
+Anything that writes to Supabase with the service role key belongs on this
+side of the wire, never in a client component.
