@@ -79,3 +79,36 @@ describe("DIAGNOSIS_TOOL", () => {
     ).toEqual(["high", "medium", "low"]);
   });
 });
+
+/**
+ * Added after a real miss: a photo of advanced spider mite damage — a whole
+ * leaf bronzed with the veins still green — came back as vine borer, with
+ * bacterial wilt and downy mildew as the alternates. Mites were not offered at
+ * all. The model had described the stippling correctly and then read "dried
+ * out" as "wilted", which sent it looking for a vascular cause.
+ */
+describe("SYSTEM_PROMPT: the spider mite miss", () => {
+  it("describes advanced mite damage, not just the early stippling", () => {
+    // The early stage is what textbooks show; the late stage is what a grower
+    // actually photographs, because that is when they notice.
+    expect(SYSTEM_PROMPT).toMatch(/bronze, tan or rust while the veins\s+stay green|veins\s*\n?\s*stay green/);
+    expect(SYSTEM_PROMPT).toMatch(/dry and papery rather than limp/);
+  });
+
+  it("separates dry damage from a true wilt", () => {
+    // This is the distinction the model got wrong.
+    expect(SYSTEM_PROMPT).toMatch(/Telling dry apart from wilted/i);
+    expect(SYSTEM_PROMPT).toMatch(/is not a wilt, however dead the leaf looks/i);
+  });
+
+  it("refuses to lead with a vine-level cause from a leaf-only photo", () => {
+    expect(SYSTEM_PROMPT).toMatch(/One leaf is one leaf/i);
+    expect(SYSTEM_PROMPT).toMatch(/do not lead with a vine or crown level cause/i);
+  });
+
+  it("still names no product, after all that editing", () => {
+    const products =
+      /neem|spinosad|sulfur|copper|imidacloprid|carbaryl|malathion|bifenthrin|abamectin|bifenazate|chlorothalonil|myclobutanil|azoxystrobin|pyrethrin|sevin|roundup/i;
+    expect(SYSTEM_PROMPT).not.toMatch(products);
+  });
+});
