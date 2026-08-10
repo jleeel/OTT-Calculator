@@ -3,6 +3,7 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { normalizeSupabaseUrl } from "./url";
 
 /**
  * Supabase clients for the server.
@@ -46,12 +47,26 @@ function envError(missing: string[]): Error {
 if (process.env.NEXT_PHASE !== "phase-production-build") {
   const missing = missingEnv(REQUIRED_ENV);
   if (missing.length > 0) throw envError(missing);
+
+  // Present is not the same as usable. A malformed URL used to surface as a
+  // failed read on the board with no mention of which variable was wrong;
+  // checking it here means a bad deploy says so at startup instead.
+  normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL as string);
 }
 
 function requireEnv(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) throw envError([name]);
   return value;
+}
+
+/**
+ * The project URL, corrected for the ways it gets pasted wrong. See url.ts —
+ * a trailing slash here took the live leaderboard down with an error that
+ * named neither the variable nor the value.
+ */
+function supabaseUrl(): string {
+  return normalizeSupabaseUrl(requireEnv("NEXT_PUBLIC_SUPABASE_URL"));
 }
 
 /**
@@ -63,7 +78,7 @@ function requireEnv(name: string): string {
  */
 export function createServiceRoleClient() {
   return createSupabaseClient(
-    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    supabaseUrl(),
     requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
     {
       // No user session to keep: this client authenticates as the service role
@@ -82,7 +97,7 @@ export async function createServerSupabaseClient() {
   const cookieStore = await cookies();
 
   return createServerClient(
-    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    supabaseUrl(),
     requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
     {
       cookies: {
