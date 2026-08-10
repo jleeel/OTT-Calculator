@@ -83,7 +83,15 @@ export async function POST(request: Request) {
   try {
     const response = await client.messages.create({
       model: DIAGNOSE_MODEL,
-      max_tokens: 2000,
+      // Caps thinking *and* the answer together. Adaptive thinking is on by
+      // default on this model and working out a plant problem from one photo
+      // is exactly the kind of task it spends on, so this is sized well above
+      // the few hundred tokens the tool call itself needs — a tight budget
+      // shows up as `stop_reason: "max_tokens"` and a missing diagnosis.
+      max_tokens: 8000,
+      // Explicit rather than relying on the default, so the request keeps
+      // meaning the same thing if the default moves again.
+      thinking: { type: "adaptive" },
       system: SYSTEM_PROMPT,
       tools: [DIAGNOSIS_TOOL],
       // Forced, so the answer always arrives in the shape the page renders.

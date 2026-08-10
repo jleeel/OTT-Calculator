@@ -126,10 +126,20 @@ caught by them. Re-derive from the primary GPC chart before changing anything.
   bearing: the client imports `types.ts`, so keeping the prompt out of it keeps
   the prompt out of the browser bundle. Verified by grepping `.next/static`
   after a build, not assumed from tree shaking.
+- The model is **`claude-sonnet-5`**. Two things about it shape the request:
+  adaptive thinking is **on by default** and `max_tokens` caps thinking *and*
+  the answer together, so `max_tokens` is 8000 rather than the few hundred the
+  tool call needs — a tight budget shows up as `stop_reason: "max_tokens"` and
+  no diagnosis. It is also the first Sonnet with **high-resolution vision**
+  (2576px long edge, up from 1568), which is why the browser downscales to
+  2576: mite stippling and mildew texture are exactly the detail a smaller
+  image throws away.
 - The model answers through a **forced single tool call**, not
-  `output_config.format` — structured outputs are not available on
-  `claude-sonnet-4-6`, and a tool with an input schema gets the same guarantee
-  on every model.
+  `output_config.format`. Structured outputs *are* available on this model and
+  would do the same job; the tool call is kept because it works on every model,
+  so changing the model cannot silently break the response shape. Forcing tool
+  choice alongside thinking is fine on the Claude API — only **Bedrock**
+  requires `thinking: {type: "disabled"}` for that.
 - The pesticide rule is enforced by **tests over the prompt text**
   (`prompt.test.ts`), including one asserting the prompt does not itself name a
   product. A prompt listing products as examples of what not to say has put

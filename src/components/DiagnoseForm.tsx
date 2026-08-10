@@ -16,8 +16,14 @@ import {
  * file is what keeps it out of the browser bundle.
  */
 
-/** Anthropic's recommended maximum long edge. Bigger buys no accuracy. */
-const MAX_EDGE = 1568;
+/**
+ * Long edge the photo is resized to. This is the high-resolution ceiling the
+ * diagnosis model accepts, and it is worth paying for here: mite stippling,
+ * the texture of a mildew patch and the difference between chewing damage and
+ * a lesion are all fine detail that a smaller image throws away. Anything
+ * larger is resized server-side anyway, so it would only cost upload time.
+ */
+const MAX_EDGE = 2576;
 const JPEG_QUALITY = 0.85;
 const MAX_NOTE = 400;
 
@@ -30,9 +36,10 @@ type State =
 
 /**
  * Downscale in the browser before uploading. A phone photo is 3–8 MB and most
- * of this traffic is on cellular from a patch; re-encoding at 1568px takes it
- * to a few hundred KB with no loss of anything the model can use. The server
- * caps size too — this is for the grower's data plan, not for security.
+ * of this traffic is on cellular from a patch; re-encoding at MAX_EDGE keeps
+ * the detail the model works from while dropping the sensor noise and metadata
+ * around it. The server caps size too — this is for the grower's data plan,
+ * not for security.
  */
 async function shrink(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file);

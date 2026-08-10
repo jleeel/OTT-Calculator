@@ -13,7 +13,7 @@
  * bad answer, it is an illegal one.
  */
 
-export const DIAGNOSE_MODEL = "claude-sonnet-4-6";
+export const DIAGNOSE_MODEL = "claude-sonnet-5";
 
 export const SYSTEM_PROMPT = `You are helping a hobbyist giant pumpkin grower (Cucurbita maxima, Atlantic Giant) work out what is going on with their plant from a photograph. Most of these growers are in the United States, many in California's Central Valley, and most are growing a small number of plants in a home patch rather than a commercial field.
 
@@ -46,11 +46,17 @@ If the photo is not a plant at all, say so and stop.
 Write to a grower, not to a plant pathologist. Short sentences. No headings, no bullet characters, no markdown in your answer text — the app renders the fields itself. Latin names only where they earn their place.`;
 
 /**
- * Forced single-tool call rather than `output_config.format`: structured
- * outputs are not available on claude-sonnet-4-6, and a tool with an input
- * schema gets the same guarantee on every model. Extended thinking is left off
- * for the same reason — forced tool choice and thinking do not combine on this
- * model family.
+ * The answer arrives as a forced single tool call.
+ *
+ * Structured outputs (`output_config.format`) are available on this model and
+ * would do the same job; the forced tool call is kept because it is equivalent
+ * here and works on every model, so changing DIAGNOSE_MODEL cannot silently
+ * break the response shape. Forcing tool choice alongside thinking is fine on
+ * the Claude API — only Bedrock requires thinking to be disabled for that, and
+ * this deploys to Vercel against the Claude API.
+ *
+ * If this ever moves to `output_config.format`: every object needs
+ * `additionalProperties: false`, and `maxItems` is not supported there.
  */
 export const DIAGNOSIS_TOOL = {
   name: "record_diagnosis",
