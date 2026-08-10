@@ -61,13 +61,13 @@ const MEASUREMENTS: {
     key: "ss",
     step: "2",
     title: "Side to side",
-    hint: "Ground to ground over the top, across the vine.",
+    hint: "Widest point from side to side.",
   },
   {
     key: "ee",
     step: "3",
-    title: "End to end",
-    hint: "Ground to ground over the top, stem to blossom.",
+    title: "Stem end to blossom end",
+    hint: "Over the top from the stem end to the blossom end.",
   },
 ];
 
@@ -222,6 +222,13 @@ function inches(value: string): number {
 }
 
 const CARD = "rounded-2xl bg-cream p-5 shadow-[0_2px_16px_rgba(0,0,0,0.16)]";
+
+/** Matches the tape colours in the diagram: 1 green, 2 blue, 3 orange. */
+const TAPE_TINT: Record<TapeKey, { chip: string; ring: string }> = {
+  c: { chip: "bg-[var(--color-tape-1)]", ring: "border-[var(--color-tape-1)]" },
+  ss: { chip: "bg-[var(--color-tape-2)]", ring: "border-[var(--color-tape-2)]" },
+  ee: { chip: "bg-[var(--color-tape-3)]", ring: "border-[var(--color-tape-3)]" },
+};
 const EYEBROW =
   "text-micro font-semibold tracking-[0.12em] uppercase text-sage";
 
@@ -389,13 +396,7 @@ export default function CalculatorPage() {
               >
                 <span
                   aria-hidden
-                  className={`numerals flex h-7 w-7 flex-none items-center justify-center rounded-full text-tiny font-semibold transition-colors ${
-                    isActive
-                      ? "bg-pumpkin text-cream"
-                      : isFilled
-                        ? "bg-gold text-ink"
-                        : "bg-cream-dim text-sage"
-                  }`}
+                  className={`numerals flex h-8 w-8 flex-none items-center justify-center rounded-full text-tiny font-semibold text-cream transition-opacity ${TAPE_TINT[m.key].chip} ${isActive || isFilled ? "opacity-100" : "opacity-70"}`}
                 >
                   {m.step}
                 </span>
@@ -420,13 +421,7 @@ export default function CalculatorPage() {
                     onChange={(e) =>
                       setMeasurements((prev) => ({ ...prev, [m.key]: e.target.value }))
                     }
-                    className={`numerals w-[76px] rounded-xl border-2 bg-white px-2.5 py-2 text-right text-lead font-semibold text-ink transition-colors ${
-                      isActive
-                        ? "border-pumpkin"
-                        : isFilled
-                          ? "border-gold"
-                          : "border-cream-edge"
-                    }`}
+                    className={`numerals w-[76px] rounded-xl border-2 bg-white px-2.5 py-2 text-right text-lead font-semibold text-ink transition-colors ${isActive || isFilled ? TAPE_TINT[m.key].ring : "border-cream-edge"}`}
                   />
                   <span className="text-tiny text-sage">in</span>
                 </span>
@@ -627,7 +622,7 @@ export default function CalculatorPage() {
             type="button"
             onClick={saveMeasurement}
             disabled={!complete}
-            className="w-full rounded-2xl bg-gold px-5 text-base font-semibold text-ink shadow-[0_4px_20px_rgba(0,0,0,0.32)] transition-colors disabled:bg-vine-soft disabled:text-cream/45 disabled:shadow-none"
+            className="display-face w-full rounded-full bg-cream px-5 text-lead text-vine shadow-[0_4px_20px_rgba(0,0,0,0.32)] transition-colors disabled:bg-vine-soft disabled:text-cream/45 disabled:shadow-none"
           >
             {justSaved ? "Saved to your log" : "Save this measurement"}
           </button>

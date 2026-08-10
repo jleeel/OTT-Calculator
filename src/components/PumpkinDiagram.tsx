@@ -85,13 +85,11 @@ const TAPES: {
   },
 ];
 
-type State = "active" | "filled" | "idle";
-
-function tapeColor(state: State): string {
-  if (state === "active") return "var(--color-pumpkin)";
-  if (state === "filled") return "var(--color-gold)";
-  return "var(--color-sage)";
-}
+const TAPE_COLOR: Record<TapeKey, string> = {
+  c: "var(--color-tape-1)",
+  ss: "var(--color-tape-2)",
+  ee: "var(--color-tape-3)",
+};
 
 export default function PumpkinDiagram({ active, filled }: Props) {
   return (
@@ -162,10 +160,12 @@ export default function PumpkinDiagram({ active, filled }: Props) {
       <path d={BODY} fill="none" stroke="var(--color-vine)" strokeOpacity="0.85" strokeWidth="2.4" />
 
       {TAPES.map((tape) => {
-        const state: State =
-          active === tape.key ? "active" : filled[tape.key] ? "filled" : "idle";
-        const color = tapeColor(state);
-        const width = state === "active" ? 4.8 : state === "filled" ? 3.8 : 2.8;
+        const isActive = active === tape.key;
+        const isFilled = filled[tape.key];
+        const color = TAPE_COLOR[tape.key];
+        // Colour never changes — focus and completion change presence only.
+        const width = isActive ? 5.2 : isFilled ? 4 : 3;
+        const opacity = isActive ? 1 : isFilled ? 0.95 : 0.62;
 
         return (
           <g key={tape.key}>
@@ -174,7 +174,7 @@ export default function PumpkinDiagram({ active, filled }: Props) {
                 d={tape.behind}
                 fill="none"
                 stroke={color}
-                strokeOpacity={state === "idle" ? 0.3 : 0.45}
+                strokeOpacity={opacity * 0.5}
                 strokeWidth={width * 0.7}
                 strokeDasharray="5 7"
                 strokeLinecap="round"
@@ -190,28 +190,28 @@ export default function PumpkinDiagram({ active, filled }: Props) {
               strokeLinecap="round"
             />
             <path
-              key={`${tape.key}-${state}`}
+              key={`${tape.key}-${isActive}`}
               d={tape.front}
               fill="none"
               stroke={color}
-              strokeOpacity={state === "idle" ? 0.9 : 1}
+              strokeOpacity={opacity}
               strokeWidth={width}
               strokeLinecap="round"
               pathLength={1}
-              className={state === "active" ? "tape-draw" : undefined}
+              className={isActive ? "tape-draw" : undefined}
             />
 
             <circle
               cx={tape.chip[0]} cy={tape.chip[1]} r="11.5"
-              fill={state === "idle" ? "var(--color-cream)" : color}
-              stroke={state === "idle" ? "var(--color-sage)" : color}
-              strokeWidth="2"
+              fill={color}
+              stroke="var(--color-cream)"
+              strokeWidth="2.5"
             />
             <text
               x={tape.chip[0]} y={tape.chip[1]}
               textAnchor="middle" dominantBaseline="central"
               fontSize="12.5" fontWeight="600"
-              fill={state === "idle" ? "var(--color-sage)" : "var(--color-cream)"}
+              fill="var(--color-cream)"
               fontFamily="var(--font-mono)"
             >
               {tape.label}

@@ -18,7 +18,12 @@
   --color-cream-dim: #f2e7cf;
   --color-cream-edge: #e6d8ba;
 
-  --font-display: var(--font-zilla), Rockwell, Georgia, serif;
+  /* One fixed colour per measurement, matching chip, input and tape. */
+  --color-tape-1: #1f5133;
+  --color-tape-2: #2c7fd0;
+  --color-tape-3: #e2610e;
+
+  --font-display: var(--font-oswald), "Arial Narrow", sans-serif;
   --font-sans: var(--font-work-sans), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
 
@@ -41,13 +46,15 @@ body {
 }
 
 /*
- * Zilla Slab. Squared-off slab serif — feed-store signage rather than editorial
- * serif, which is the register this audience actually lives in.
+ * Oswald. Heavy condensed uppercase — county-fair banner, not editorial serif.
+ * Set from the supplied design reference.
  */
 .display-face {
   font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.015em;
+  letter-spacing: 0.005em;
 }
 
 /* All measurements and weights, so digits do not jitter as they update. */

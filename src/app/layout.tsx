@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, Work_Sans, Zilla_Slab } from "next/font/google";
+import { IBM_Plex_Mono, Oswald, Work_Sans } from "next/font/google";
 import Link from "next/link";
+import Nav from "@/components/Nav";
 import "./globals.css";
 
-const zillaSlab = Zilla_Slab({
+const oswald = Oswald({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-zilla",
+  weight: ["500", "600", "700"],
+  variable: "--font-oswald",
   display: "swap",
 });
 
@@ -35,17 +36,11 @@ export const viewport: Viewport = {
   themeColor: "#1f3d2b",
 };
 
-const NAV = [
-  { href: "/", label: "Measure" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/diagnose", label: "Plant help" },
-] as const;
-
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${zillaSlab.variable} ${workSans.variable} ${plexMono.variable}`}
+      className={`${oswald.variable} ${workSans.variable} ${plexMono.variable}`}
     >
       <body>
         <div className="mx-auto flex min-h-screen max-w-[640px] flex-col px-4 pb-8">
@@ -59,17 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </span>
             </Link>
 
-            <nav className="mt-4 flex gap-2">
-              {NAV.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="tap inline-flex items-center rounded-full border border-vine-soft px-3.5 text-tiny font-medium text-cream/70 transition-colors hover:border-gold/60 hover:text-cream"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+            <Nav />
           </header>
 
           <main className="flex-1">{children}</main>
