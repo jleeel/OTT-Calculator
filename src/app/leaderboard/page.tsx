@@ -250,7 +250,11 @@ export default async function LeaderboardPage() {
                     </span>
                   </div>
                   <div className="mt-0.5 truncate text-tiny text-sage">
-                    {row.grower_name} · {row.location}
+                    {row.grower_name}
+                    {row.grower_verified && (
+                      <VerifiedMark note={row.grower_verified_note} />
+                    )}{" "}
+                    · {row.location}
                   </div>
                   <div className="mt-0.5 text-tiny text-sage">
                     ~{lbs(row.estimated_lbs)} lb · {ago(row.daysSince)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DIAGNOSE_DISCLAIMER,
   REFERRAL,
@@ -78,6 +78,15 @@ export default function DiagnoseForm() {
 
   const busy = state.kind === "reading" || state.kind === "sending";
 
+  // Navigating away with a preview on screen used to pin the original photo —
+  // 3-8 MB from a phone camera — for the lifetime of the document.
+  useEffect(
+    () => () => {
+      if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+    },
+    [],
+  );
+
   function reset() {
     setState({ kind: "idle" });
     if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
@@ -138,6 +147,10 @@ export default function DiagnoseForm() {
         message:
           "Could not reach the server. Check your connection and try again.",
       });
+    } finally {
+      // A file input fires no change event when the same file is chosen twice.
+      // Without this, re-picking the same photo to retry did nothing at all.
+      if (fileRef.current) fileRef.current.value = "";
     }
   }
 

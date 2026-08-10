@@ -67,3 +67,43 @@ describe("normalizeSupabaseUrl", () => {
     expect(normalizeSupabaseUrl("http://localhost:54321")).toBe("http://localhost:54321");
   });
 });
+
+describe("local development stack", () => {
+  it("accepts the address the Supabase CLI actually prints", () => {
+    // `supabase start` prints `API URL: http://127.0.0.1:54321`. Rejecting it
+    // meant pasting the CLI's own output produced a hard startup failure.
+    expect(normalizeSupabaseUrl("http://127.0.0.1:54321")).toBe("http://127.0.0.1:54321");
+    expect(normalizeSupabaseUrl("http://localhost:54321")).toBe("http://localhost:54321");
+    expect(normalizeSupabaseUrl("http://[::1]:54321")).toBe("http://[::1]:54321");
+  });
+
+  it("still refuses a non-http scheme on loopback", () => {
+    expect(() => normalizeSupabaseUrl("ftp://localhost")).toThrow(SupabaseUrlError);
+  });
+
+  it("still refuses plain http to a real host", () => {
+    expect(() => normalizeSupabaseUrl("http://abc.supabase.co")).toThrow(
+      /must use https/,
+    );
+  });
+});
+
+describe("origin normalising", () => {
+  it("keeps a non-default port", () => {
+    expect(normalizeSupabaseUrl("https://abc.supabase.co:8443")).toBe(
+      "https://abc.supabase.co:8443",
+    );
+  });
+
+  it("lowercases the scheme and host", () => {
+    expect(normalizeSupabaseUrl("HTTPS://ABC.SUPABASE.CO")).toBe(
+      "https://abc.supabase.co",
+    );
+  });
+
+  it("drops credentials rather than forwarding them to the API", () => {
+    expect(normalizeSupabaseUrl("https://user:pass@abc.supabase.co")).toBe(
+      "https://abc.supabase.co",
+    );
+  });
+});

@@ -311,9 +311,14 @@ export default function CalculatorPage() {
     // DAP runs to the measurement's own date so the projection matches the
     // weight it is built from, not whatever today happens to be.
     const dap = daysBetween(active.pollinationDate, last.date);
-    const endDap = active.expectedEndDate
+    const rawEndDap = active.expectedEndDate
       ? daysBetween(active.pollinationDate, active.expectedEndDate)
       : null;
+
+    // An end date before the last measurement is a typo, not an instruction —
+    // most often the year. Treated as no end date at all, so the copy below
+    // cannot end up naming a negative day number.
+    const endDap = rawEndDap !== null && rawEndDap >= dap ? rawEndDap : null;
 
     const result = projectFinalWeight(last.lbs, dap, endDap);
     if (!result) return null;
@@ -322,6 +327,7 @@ export default function CalculatorPage() {
       dap,
       endDap,
       clamped: endDap !== null && endDap < MAX_DAP,
+      endDateIgnored: rawEndDap !== null && rawEndDap < dap,
     };
   }, [active]);
 
@@ -640,6 +646,12 @@ export default function CalculatorPage() {
                     <p className="mt-1 text-tiny text-cream/70">
                       Projected to day {projection.endDap} end date, not full
                       maturity.
+                    </p>
+                  )}
+                  {projection.endDateIgnored && (
+                    <p className="mt-1 text-tiny text-cream/70">
+                      Your end date falls before this measurement, so it is
+                      being ignored — check the year.
                     </p>
                   )}
                 </div>

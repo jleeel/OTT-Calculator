@@ -89,8 +89,16 @@ export function projectFinalWeight(
     return { projectedLbs: atMaturity, fractionComplete: fraction };
   }
 
+  // An end date can only ever take away growth the fruit has not had yet. It
+  // must never project below what the tape already measured — and it did:
+  // an end date earlier than the last measurement, or a mistyped year, scaled
+  // a measured 1000 lb fruit down to 793 lb and 27 lb respectively. `curveAt`
+  // floors at 0.025 rather than 0, so even a wildly past date returned a
+  // confident-looking small number instead of nothing.
+  const atEnd = Math.max(fraction, curveAt(endDap));
+
   return {
-    projectedLbs: atMaturity * curveAt(endDap),
+    projectedLbs: atMaturity * atEnd,
     fractionComplete: fraction,
   };
 }

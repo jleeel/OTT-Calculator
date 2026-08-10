@@ -137,3 +137,34 @@ describe("roundProjection", () => {
     expect(roundProjection(1234)).toBe(1230);
   });
 });
+
+describe("an end date never retracts measured growth", () => {
+  // A grower types the end date wrong — most often the year. Before this was
+  // guarded, DAP 70 with an end date at DAP 50 projected 793 lb for a fruit
+  // that already weighed 1000, and a mistyped year projected 27 lb.
+  it("ignores an end date earlier than the last measurement", () => {
+    const capped = projectFinalWeight(1000, 70, 50);
+    const open = projectFinalWeight(1000, 70);
+    expect(capped?.projectedLbs).toBeCloseTo(1000, 6);
+    expect(capped?.projectedLbs).toBeLessThanOrEqual(open!.projectedLbs);
+  });
+
+  it("survives a mistyped year without projecting a tiny weight", () => {
+    const typo = projectFinalWeight(1000, 70, -263);
+    expect(typo?.projectedLbs).toBeCloseTo(1000, 6);
+  });
+
+  it("never projects below the weight already on the tape", () => {
+    for (const endDap of [-300, -1, 0, 10, 30, 50, 69]) {
+      const result = projectFinalWeight(1000, 70, endDap);
+      expect(result!.projectedLbs).toBeGreaterThanOrEqual(1000);
+    }
+  });
+
+  it("still trims the tail for an end date genuinely ahead of the fruit", () => {
+    const early = projectFinalWeight(1000, 70, 75);
+    const open = projectFinalWeight(1000, 70);
+    expect(early!.projectedLbs).toBeLessThan(open!.projectedLbs);
+    expect(early!.projectedLbs).toBeGreaterThan(1000);
+  });
+});

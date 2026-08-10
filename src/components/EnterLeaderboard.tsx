@@ -423,11 +423,11 @@ export default function EnterLeaderboard({
                     Posting as
                   </div>
                   <div className="mt-0.5 text-small font-semibold text-vine numerals">
-                    {(
-                      Number.parseFloat(form.circumference) || 0
-                    ) +
-                      (Number.parseFloat(form.side_to_side) || 0) +
-                      (Number.parseFloat(form.end_to_end) || 0)}
+                    {totalOtt(
+                      Number.parseFloat(form.circumference) || 0,
+                      Number.parseFloat(form.side_to_side) || 0,
+                      Number.parseFloat(form.end_to_end) || 0,
+                    ).toFixed(1)}
                     &quot; OTT · ~{Math.round(estimate).toLocaleString("en-US")} lb
                   </div>
                   <div className="mt-1 text-tiny text-vine">

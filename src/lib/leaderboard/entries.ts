@@ -93,15 +93,23 @@ export async function insertEntry(
   const supabase = createServiceRoleClient();
 
   // Flags compare against this grower+pumpkin's most recent live entry.
-  const { data: prior } = await supabase
+  const { data: prior, error: priorError } = await supabase
     .from("entries")
     .select("measured_on, estimated_lbs")
     .eq("grower_name", input.grower_name)
     .eq("pumpkin_name", input.pumpkin_name)
     .is("deleted_at", null)
+    // Must PRECEDE this measurement, not merely be the newest row. A grower
+    // back-dating an entry was compared against a later one, so `days` ran
+    // negative and the jump rule quietly never fired.
+    .lte("measured_on", input.measured_on)
     .order("measured_on", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  // A failed lookup degrades to "no flags", which is the right behaviour but
+  // should not be silent — flags are the only thing computed from history.
+  if (priorError) console.error("[leaderboard] prior entry lookup", priorError);
 
   const estimated_lbs = estimateLbs(input);
   const flags = computeFlags(
