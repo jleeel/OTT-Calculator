@@ -1,16 +1,23 @@
 "use client";
 
 /**
- * The teaching element. Three tape paths drawn over a pumpkin in three-quarter
- * view, so a first-year grower can see which wrap each measurement means.
+ * The teaching element. Three tape paths drawn over a pumpkin, so a first-year
+ * grower can see which wrap each measurement means.
  *
  * Focused input  -> its tape draws in and highlights in pumpkin orange
  * Already filled -> persistent gold path
  * Neither        -> quiet sage
  *
- * Each tape sits on a cream casing stroke so it reads as lying on the fruit
- * rather than merging into the ribs beneath it — without that, the quiet state
- * is indistinguishable from the pumpkin's own lines.
+ * On the drawing itself: the body is built from six overlapping lobe ellipses
+ * rather than one outline, which gives a genuinely bumpy silhouette and turns
+ * the overlaps into ribs for free. The lobes are deliberately NOT mirrored —
+ * they narrow toward the right to read as three-quarter view, and the tones
+ * step darker the same way for a single light source up and to the left. The
+ * proportions are Atlantic Giant: wide, squat, heavy in the shoulders, nothing
+ * like the tall jack-o-lantern shape.
+ *
+ * Every tape rides on a cream casing stroke so it reads as lying on the fruit
+ * instead of merging into the ribs beneath it.
  *
  * The draw animation is a CSS keyframe on a keyed element, so refocusing an
  * input replays it. `prefers-reduced-motion` collapses the duration globally
@@ -24,45 +31,43 @@ type Props = {
   filled: Record<TapeKey, boolean>;
 };
 
+/** Front-left catches the light; tone steps down toward the shaded right. */
+const LOBES: { cx: number; cy: number; rx: number; ry: number; fill: string }[] = [
+  { cx: 74, cy: 161, rx: 28, ry: 53, fill: "#E9A937" },
+  { cx: 110, cy: 156, rx: 35, ry: 58, fill: "#F3B950" },
+  { cx: 153, cy: 154, rx: 39, ry: 60, fill: "#EFAF41" },
+  { cx: 197, cy: 158, rx: 33, ry: 56, fill: "#E29F31" },
+  { cx: 234, cy: 164, rx: 25, ry: 50, fill: "#D69227" },
+  { cx: 253, cy: 170, rx: 17, ry: 44, fill: "#C8851F" },
+];
+
 const TAPES: {
   key: TapeKey;
   label: string;
-  /** The part of the wrap you can see. */
   front: string;
-  /** The part that passes behind the fruit, drawn faint and dashed. */
   behind?: string;
-  /** Sits directly on the path, at an uncrowded point. */
   chip: [number, number];
 }[] = [
   {
     key: "ss",
     label: "2",
-    front: "M 94 206 C 80 150, 112 88, 166 88 C 220 88, 240 152, 226 206",
-    // t≈0.3 along the descending limb — clear of the stem and the silhouette.
-    chip: [205, 103],
+    front: "M 74 210 C 54 152, 96 94, 170 94 C 236 96, 264 154, 246 210",
+    chip: [225, 114],
   },
   {
     key: "ee",
     label: "3",
-    front: "M 130 215 C 102 188, 100 118, 146 92",
-    behind: "M 146 92 C 194 68, 240 100, 246 142",
-    chip: [107, 152],
+    front: "M 126 213 C 88 186, 84 118, 142 96",
+    behind: "M 142 96 C 206 74, 258 106, 264 148",
+    chip: [98, 153],
   },
   {
     key: "c",
     label: "1",
-    front: "M 66 152 C 74 178, 112 191, 158 191 C 204 191, 242 178, 250 152",
-    behind: "M 66 152 C 74 126, 112 113, 158 113 C 204 113, 242 126, 250 152",
-    chip: [158, 191],
+    front: "M 46 156 C 54 182, 102 194, 158 194 C 214 194, 260 182, 268 156",
+    behind: "M 46 156 C 54 130, 102 118, 158 118 C 214 118, 260 130, 268 156",
+    chip: [158, 194],
   },
-];
-
-const RIBS = [
-  "M 152 94 Q 98 128, 97 166",
-  "M 152 94 Q 121 132, 123 187",
-  "M 152 94 Q 157 142, 161 197",
-  "M 152 94 Q 199 136, 207 185",
-  "M 152 94 Q 231 128, 235 160",
 ];
 
 type State = "active" | "filled" | "idle";
@@ -76,55 +81,54 @@ function tapeColor(state: State): string {
 export default function PumpkinDiagram({ active, filled }: Props) {
   return (
     <svg
-      viewBox="0 0 320 244"
-      className="mx-auto block max-h-[220px] w-full"
+      viewBox="0 0 320 236"
+      className="mx-auto block max-h-[208px] w-full"
       role="img"
-      aria-label="A pumpkin with the three tape measurements drawn over it: a band around the widest point, a wrap from the ground over the top and back down across the vine, and a wrap from the ground over the top from stem to blossom."
+      aria-label="A giant pumpkin with the three tape measurements drawn over it: a band around the widest point, a wrap from the ground over the top and back down across the vine, and a wrap from the ground over the top from stem to blossom."
     >
       <line
-        x1="12" y1="219" x2="308" y2="219"
-        stroke="var(--color-sage)" strokeOpacity="0.5"
+        x1="14" y1="215" x2="306" y2="215"
+        stroke="var(--color-sage)" strokeOpacity="0.45"
         strokeWidth="1.5" strokeLinecap="round"
       />
-      <ellipse cx="158" cy="218" rx="80" ry="8" fill="var(--color-ink)" opacity="0.12" />
+      <ellipse cx="158" cy="214" rx="104" ry="7" fill="var(--color-ink)" opacity="0.13" />
 
-      {/* stem */}
-      <path
-        d="M 146 98 C 143 78, 139 66, 130 54 C 140 50, 150 58, 154 70
-           C 158 60, 166 55, 173 58 C 165 70, 160 84, 159 98 Z"
-        fill="var(--color-vine)"
-      />
+      {/* stem: behind the body so it sits into the shoulder, not on top of it */}
+      <g>
+        <path
+          d="M 143 104 C 142 88, 138 74, 131 62 C 127 55, 133 47, 140 50
+             C 148 54, 154 70, 158 86 C 160 94, 161 100, 161 104 Z"
+          fill="var(--color-vine)"
+        />
+        <path
+          d="M 147 98 C 145 86, 142 76, 137 66"
+          fill="none" stroke="#2F5A3F" strokeWidth="1.7" strokeLinecap="round"
+        />
+      </g>
 
       {/* body */}
-      <path
-        d="M 66 152 C 66 112, 106 86, 158 86 C 210 86, 250 112, 250 152
-           C 250 192, 210 218, 158 218 C 106 218, 66 192, 66 152 Z"
-        fill="var(--color-gold)" fillOpacity="0.45"
-        stroke="var(--color-vine)" strokeOpacity="0.45" strokeWidth="2.5"
-      />
-      {/* light coming from the upper left, so it reads as round */}
-      <ellipse
-        cx="126" cy="128" rx="42" ry="26"
-        fill="var(--color-cream)" opacity="0.30"
-      />
+      <g stroke="var(--color-vine)" strokeOpacity="0.8" strokeWidth="2.4">
+        {LOBES.map((l) => (
+          <ellipse
+            key={l.cx}
+            cx={l.cx} cy={l.cy} rx={l.rx} ry={l.ry}
+            fill={l.fill}
+          />
+        ))}
+      </g>
 
-      {RIBS.map((d) => (
-        <path
-          key={d}
-          d={d}
-          fill="none"
-          stroke="var(--color-vine)"
-          strokeOpacity="0.16"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-        />
-      ))}
+      {/* the dish a giant pumpkin carries around its stem */}
+      <path
+        d="M 128 106 C 138 100, 166 100, 178 108"
+        fill="none" stroke="var(--color-vine)" strokeOpacity="0.35"
+        strokeWidth="1.8" strokeLinecap="round"
+      />
 
       {TAPES.map((tape) => {
         const state: State =
           active === tape.key ? "active" : filled[tape.key] ? "filled" : "idle";
         const color = tapeColor(state);
-        const width = state === "active" ? 4.5 : state === "filled" ? 3.6 : 2.6;
+        const width = state === "active" ? 4.8 : state === "filled" ? 3.8 : 2.8;
 
         return (
           <g key={tape.key}>
@@ -133,19 +137,20 @@ export default function PumpkinDiagram({ active, filled }: Props) {
                 d={tape.behind}
                 fill="none"
                 stroke={color}
-                strokeOpacity={state === "idle" ? 0.32 : 0.45}
+                strokeOpacity={state === "idle" ? 0.3 : 0.45}
                 strokeWidth={width * 0.7}
                 strokeDasharray="5 7"
                 strokeLinecap="round"
               />
             )}
 
-            {/* casing: lifts the tape off the ribs in every state */}
+            {/* Vine keyline under every tape. Cream was invisible once the body
+                became properly saturated — gold on orange needs a dark edge. */}
             <path
               d={tape.front}
               fill="none"
-              stroke="var(--color-cream)"
-              strokeOpacity="0.85"
+              stroke="var(--color-vine)"
+              strokeOpacity="0.9"
               strokeWidth={width + 3.5}
               strokeLinecap="round"
             />
@@ -154,7 +159,7 @@ export default function PumpkinDiagram({ active, filled }: Props) {
               d={tape.front}
               fill="none"
               stroke={color}
-              strokeOpacity={state === "idle" ? 0.85 : 1}
+              strokeOpacity={state === "idle" ? 0.9 : 1}
               strokeWidth={width}
               strokeLinecap="round"
               pathLength={1}

@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, IBM_Plex_Mono, Work_Sans } from "next/font/google";
+import { IBM_Plex_Mono, Work_Sans, Zilla_Slab } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 
-const fraunces = Fraunces({
+const zillaSlab = Zilla_Slab({
   subsets: ["latin"],
-  axes: ["SOFT", "WONK", "opsz"],
-  variable: "--font-fraunces",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-zilla",
   display: "swap",
 });
 
@@ -45,7 +45,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${workSans.variable} ${plexMono.variable}`}
+      className={`${zillaSlab.variable} ${workSans.variable} ${plexMono.variable}`}
     >
       <body>
         <div className="mx-auto flex min-h-screen max-w-[640px] flex-col px-4 pb-8">

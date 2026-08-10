@@ -18,7 +18,7 @@
   --color-cream-dim: #f2e7cf;
   --color-cream-edge: #e6d8ba;
 
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-display: var(--font-zilla), Rockwell, Georgia, serif;
   --font-sans: var(--font-work-sans), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
 
@@ -41,15 +41,13 @@ body {
 }
 
 /*
- * Fraunces with its soft and wonk axes turned up — the warmth comes from the
- * face itself rather than from high contrast.
+ * Zilla Slab. Squared-off slab serif — feed-store signage rather than editorial
+ * serif, which is the register this audience actually lives in.
  */
 .display-face {
   font-family: var(--font-display);
-  font-variation-settings: "SOFT" 70, "WONK" 1;
-  font-optical-sizing: auto;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
 }
 
 /* All measurements and weights, so digits do not jitter as they update. */
@@ -62,8 +60,8 @@ body {
 /* The one enormous thing on the page. */
 .weight-readout {
   font-size: clamp(4.75rem, 25vw, 7.5rem);
-  line-height: 0.86;
-  font-weight: 600;
+  line-height: 0.88;
+  font-weight: 700;
 }
 
 /*
