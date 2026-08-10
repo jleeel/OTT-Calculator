@@ -139,7 +139,7 @@ Preview, and Development:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public      | Supabase `anon` key                                       |
 | `SUPABASE_SERVICE_ROLE_KEY`     | **Secret**  | Supabase `service_role` key — bypasses RLS                |
 | `LEADERBOARD_PASSCODE`          | **Secret**  | `openssl rand -base64 32`                                 |
-| `ADMIN_PASSCODE`                | **Secret**  | Admin actions; unused until a later pass                  |
+| `ADMIN_PASSCODE`                | **Secret**  | Removing any entry; that route 503s without it            |
 | `ANTHROPIC_API_KEY`             | **Secret**  | Read by `/api/diagnose`; without it that page says so     |
 | `NEXT_PUBLIC_SITE_URL`          | Public      | Your production URL, e.g. `https://ott.example.com`       |
 

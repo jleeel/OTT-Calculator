@@ -105,10 +105,11 @@ export async function POST(request: Request) {
   try {
     const { row: entry, editToken } = await insertEntry(validated.value);
 
-    const response = NextResponse.json(
-      { ok: true, entry, editToken },
-      { status: 201 },
-    );
+    // editToken is deliberately NOT in the body. It is the only proof of
+    // ownership for deletion, nothing on the client reads it, and the httpOnly
+    // cookie below already carries it where it needs to go — putting a bearer
+    // credential in a response body as well only widens where it can end up.
+    const response = NextResponse.json({ ok: true, entry }, { status: 201 });
 
     // Ownership of this specific entry, so this browser can remove it later.
     response.cookies.set(
