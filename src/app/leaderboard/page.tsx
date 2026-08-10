@@ -21,8 +21,8 @@ const HEADER_NOTE =
   "only and carries about plus or minus 5% error. This is for fun; official " +
   "weights come from a scale at a sanctioned weigh-off.";
 
-const CARD = "mb-4 rounded-[14px] border border-line bg-card p-5";
-const CARD_TITLE = "mb-3.5 text-xs font-bold tracking-[0.09em] uppercase text-blue";
+const CARD = "mb-4 rounded-2xl border border-cream-edge bg-cream p-5";
+const CARD_TITLE = "mb-3.5 text-xs font-bold tracking-[0.09em] uppercase text-vine";
 
 type Ranked = LeaderboardRow & {
   rank: number;
@@ -70,23 +70,23 @@ export default async function LeaderboardPage() {
     <>
       <section className={CARD}>
         <h2 className={CARD_TITLE}>Season leaderboard</h2>
-        <p className="text-[13px] leading-[1.6] text-muted">{HEADER_NOTE}</p>
+        <p className="text-tiny leading-[1.6] text-sage">{HEADER_NOTE}</p>
       </section>
 
       {loadError ? (
         <section className={CARD}>
-          <p className="text-sm leading-relaxed text-muted">{loadError}</p>
+          <p className="text-sm leading-relaxed text-sage">{loadError}</p>
         </section>
       ) : rows.length === 0 ? (
         <section className={CARD}>
           <h2 className={CARD_TITLE}>No entries yet</h2>
-          <p className="text-sm leading-relaxed text-muted">
+          <p className="text-sm leading-relaxed text-sage">
             Nobody has posted a measurement yet, so the board is wide open.
             First one up sets the mark.
           </p>
-          <p className="mt-3 text-sm leading-relaxed text-muted">
+          <p className="mt-3 text-sm leading-relaxed text-sage">
             Measure your fruit on the{" "}
-            <Link href="/" className="font-semibold text-blue underline">
+            <Link href="/" className="font-semibold text-vine underline">
               calculator
             </Link>
             , log it, then hit <strong className="font-semibold">Enter the
@@ -104,11 +104,11 @@ export default async function LeaderboardPage() {
             {rows.map((row) => (
               <li
                 key={row.id}
-                className="flex gap-3 border-t border-line py-3.5 first:border-t-0 first:pt-0"
+                className="flex gap-3 border-t border-cream-edge py-3.5 first:border-t-0 first:pt-0"
               >
                 <div
-                  className={`flex h-7 w-7 flex-none items-center justify-center rounded-lg text-[13px] font-bold ${
-                    row.stale ? "bg-shell text-muted" : "bg-blue-soft text-blue"
+                  className={`flex h-7 w-7 flex-none items-center justify-center rounded-lg text-tiny font-bold ${
+                    row.stale ? "bg-cream-dim text-sage" : "bg-cream-dim text-vine"
                   }`}
                 >
                   {row.rank}
@@ -116,27 +116,27 @@ export default async function LeaderboardPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
                     <strong
-                      className={`truncate text-[15px] font-semibold ${
-                        row.stale ? "text-muted" : ""
+                      className={`truncate text-small font-semibold ${
+                        row.stale ? "text-sage" : ""
                       }`}
                     >
                       {row.pumpkin_name}
                     </strong>
                     <span
-                      className={`flex-none text-[15px] font-bold tabular-nums ${
-                        row.stale ? "text-muted" : "text-navy"
+                      className={`flex-none text-small font-bold numerals ${
+                        row.stale ? "text-sage" : "text-vine"
                       }`}
                     >
                       {row.ott.toFixed(1)}&quot;
                     </span>
                   </div>
-                  <div className="mt-0.5 truncate text-[12.5px] text-muted">
+                  <div className="mt-0.5 truncate text-tiny text-sage">
                     {row.grower_name} · {row.location}
                   </div>
-                  <div className="mt-0.5 text-[12.5px] text-muted">
+                  <div className="mt-0.5 text-tiny text-sage">
                     ~{lbs(row.estimated_lbs)} lb · {ago(row.daysSince)}
                     {row.stale && (
-                      <span className="ml-1.5 rounded-full bg-shell px-1.5 py-0.5 text-[11px] font-semibold text-muted">
+                      <span className="ml-1.5 rounded-full bg-cream-dim px-1.5 py-0.5 text-micro font-semibold text-sage">
                         stale
                       </span>
                     )}
@@ -154,7 +154,7 @@ export default async function LeaderboardPage() {
                   {["#", "Pumpkin", "Grower", "Location"].map((h) => (
                     <th
                       key={h}
-                      className="pb-[9px] text-left text-[11.5px] font-bold tracking-[0.06em] text-muted uppercase"
+                      className="pb-[9px] text-left text-micro font-bold tracking-[0.06em] text-sage uppercase"
                     >
                       {h}
                     </th>
@@ -162,7 +162,7 @@ export default async function LeaderboardPage() {
                   {["OTT", "Est. lb", "Measured"].map((h) => (
                     <th
                       key={h}
-                      className="pb-[9px] text-right text-[11.5px] font-bold tracking-[0.06em] text-muted uppercase"
+                      className="pb-[9px] text-right text-micro font-bold tracking-[0.06em] text-sage uppercase"
                     >
                       {h}
                     </th>
@@ -171,29 +171,29 @@ export default async function LeaderboardPage() {
               </thead>
               <tbody>
                 {rows.map((row) => {
-                  const cell = `border-t border-line py-3 text-[15px] ${
-                    row.stale ? "text-muted" : ""
+                  const cell = `border-t border-cream-edge py-3 text-small ${
+                    row.stale ? "text-sage" : ""
                   }`;
                   return (
                     <tr key={row.id}>
-                      <td className={`${cell} w-8 tabular-nums`}>{row.rank}</td>
+                      <td className={`${cell} w-8 numerals`}>{row.rank}</td>
                       <td className={`${cell} font-semibold`}>
                         {row.pumpkin_name}
                         {row.stale && (
-                          <span className="ml-2 rounded-full bg-shell px-1.5 py-0.5 text-[11px] font-semibold text-muted">
+                          <span className="ml-2 rounded-full bg-cream-dim px-1.5 py-0.5 text-micro font-semibold text-sage">
                             stale
                           </span>
                         )}
                       </td>
                       <td className={cell}>{row.grower_name}</td>
-                      <td className={`${cell} text-muted`}>{row.location}</td>
-                      <td className={`${cell} text-right font-bold tabular-nums`}>
+                      <td className={`${cell} text-sage`}>{row.location}</td>
+                      <td className={`${cell} text-right font-bold numerals`}>
                         {row.ott.toFixed(1)}&quot;
                       </td>
-                      <td className={`${cell} text-right tabular-nums`}>
+                      <td className={`${cell} text-right numerals`}>
                         {lbs(row.estimated_lbs)}
                       </td>
-                      <td className={`${cell} text-right text-muted`}>
+                      <td className={`${cell} text-right text-sage`}>
                         {ago(row.daysSince)}
                       </td>
                     </tr>
@@ -203,7 +203,7 @@ export default async function LeaderboardPage() {
             </table>
           </div>
 
-          <p className="mt-4 text-xs leading-[1.6] text-muted">
+          <p className="mt-4 text-xs leading-[1.6] text-sage">
             One row per pumpkin, showing its most recent measurement. Anything
             measured more than {STALE_AFTER_DAYS} days ago is greyed out and
             marked stale — re-measure to move it back up to date.
