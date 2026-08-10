@@ -15,10 +15,15 @@ import { ownerCookieName, verifyOwnership } from "@/lib/leaderboard/ownership";
 import { requirePasscode } from "@/lib/leaderboard/session";
 import { daysBetween, lbPerDay } from "@/lib/ott";
 
+const TITLE = "Leaderboard · Giant Pumpkin Calculator";
+const DESCRIPTION =
+  "Season leaderboard of giant pumpkin measurements, ranked by measured OTT inches.";
+
 export const metadata: Metadata = {
-  title: "Leaderboard · Giant Pumpkin Weight Calculator",
-  description:
-    "Season leaderboard of giant pumpkin measurements, ranked by measured OTT inches.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { title: TITLE, description: DESCRIPTION, url: "/leaderboard" },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 // The board changes whenever someone submits, so it is never prerendered.
@@ -250,7 +255,11 @@ export default async function LeaderboardPage() {
                     </span>
                   </div>
                   <div className="mt-0.5 truncate text-tiny text-sage">
-                    {row.grower_name} · {row.location}
+                    {row.grower_name}
+                    {row.grower_verified && (
+                      <VerifiedMark note={row.grower_verified_note} />
+                    )}{" "}
+                    · {row.location}
                   </div>
                   <div className="mt-0.5 text-tiny text-sage">
                     ~{lbs(row.estimated_lbs)} lb · {ago(row.daysSince)}

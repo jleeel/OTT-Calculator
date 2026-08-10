@@ -53,7 +53,14 @@ export function normalizeSupabaseUrl(raw: string): string {
     throw new SupabaseUrlError("is not a valid URL", value);
   }
 
-  if (parsed.protocol !== "https:" && parsed.hostname !== "localhost") {
+  // The Supabase CLI prints `API URL: http://127.0.0.1:54321`, so a loopback
+  // address over http is the local stack, not a mistake. Anything else must be
+  // https — and http is the only scheme excused, so ftp://localhost still fails.
+  const loopback =
+    parsed.hostname === "localhost" ||
+    parsed.hostname === "127.0.0.1" ||
+    parsed.hostname === "[::1]";
+  if (parsed.protocol !== "https:" && !(loopback && parsed.protocol === "http:")) {
     throw new SupabaseUrlError(
       `must use https (got ${parsed.protocol.replace(":", "")})`,
       value,

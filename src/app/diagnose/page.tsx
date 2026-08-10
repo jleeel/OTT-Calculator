@@ -2,10 +2,22 @@ import type { Metadata } from "next";
 import DiagnoseForm from "@/components/DiagnoseForm";
 import { DIAGNOSE_DISCLAIMER } from "@/lib/diagnose/types";
 
+const DESCRIPTION =
+  "Photograph a giant pumpkin leaf, vine or fruit and get an idea of what is going on with it.";
+
 export const metadata: Metadata = {
   title: "Plant help · Giant Pumpkin Calculator",
-  description:
-    "Photograph a giant pumpkin leaf, vine or fruit and get an idea of what is going on with it.",
+  description: DESCRIPTION,
+  openGraph: {
+    title: "Plant help · Giant Pumpkin Calculator",
+    description: DESCRIPTION,
+    url: "/diagnose",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Plant help · Giant Pumpkin Calculator",
+    description: DESCRIPTION,
+  },
 };
 
 export default function DiagnosePage() {
