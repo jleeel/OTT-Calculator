@@ -11,6 +11,31 @@ This deploys as **its own Vercel project on its own subdomain**. It is separate
 from well-registration — separate project, separate domain, separate Supabase
 tables. Do not fold this into that codebase or share its deployment config.
 
+## Supabase API keys
+
+Supabase has moved to **`sb_publishable_…` / `sb_secret_…`** keys. These replace
+the legacy JWT `anon` and `service_role` keys — they are opaque strings, not
+JWTs, and nothing in this codebase may try to decode one.
+
+The env var names still say `ANON_KEY` / `SERVICE_ROLE_KEY` because they name
+the *role*, not the key format. Put the publishable key in
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` and the secret key in
+`SUPABASE_SERVICE_ROLE_KEY`. Legacy JWT keys still work if a project has them.
+
+**Both installed clients accept the new formats** — verified against the vendored
+source, not assumed:
+
+- `@supabase/supabase-js` **2.112.2** has explicit handling in `src/lib/fetch.ts`.
+  `isNewApiKey()` recognises the two prefixes; new-format keys go in the `apikey`
+  header and are kept out of the `Authorization: Bearer` fallback where that
+  would be wrong. `checkApiKeyFormat()` warns once per unrecognised `sb_*`
+  subtype and **never throws** — the server decides key validity, not the SDK.
+- `@supabase/ssr` **0.12.4** does no key parsing at all; it is cookie and session
+  plumbing and hands the key straight through.
+
+If either package is downgraded below the version that added `isNewApiKey`,
+re-check this before assuming new-format keys still work.
+
 ## The formula
 
 `src/lib/ott.ts` is the **single source of truth** for weight estimation.
@@ -52,6 +77,37 @@ caught by them. Re-derive from the primary GPC chart before changing anything.
   written PCA recommendation.
 - The personal measurement log stays in **localStorage**; only leaderboard
   entries go to Supabase.
+- Reading the leaderboard needs nothing; **entering it needs the patch
+  passcode** (`LEADERBOARD_PASSCODE`), exchanged once for a signed httpOnly
+  cookie.
+- The passcode also **keys the cookie signature**, so changing it invalidates
+  every outstanding session. That is intended.
+- The **rate-limit counter lives inside the signed cookie**, not server memory —
+  on Vercel each request can hit a different instance, so an in-process counter
+  would reset unpredictably. Clearing cookies resets the count, but also
+  discards the session, so the passcode has to be entered again.
+- RLS gives anon **SELECT only**. There is deliberately no INSERT policy: writes
+  go through `/api/leaderboard/entries` on the service role key.
+- The board reads the **`leaderboard_current` view**, which is `DISTINCT ON
+  (grower_name, pumpkin_name)` — PostgREST cannot express that, and it keeps a
+  grower who logs weekly from filling the board. It is `security_invoker`, so
+  the RLS policy on `entries` still applies.
+
+## Leaderboard layout
+
+```
+supabase/migrations/     paste into the Supabase SQL editor; no local CLI
+  0001_leaderboard.sql   npm run migration:print
+src/lib/leaderboard/
+  validation.ts          pure; server-side input rules, HTML stripping
+  session.ts             passcode compare, cookie signing, rate limit
+  entries.ts             insert (service role) + board read (anon, RLS)
+src/app/api/leaderboard/
+  auth/route.ts          GET = am I authed?  POST = exchange passcode
+  entries/route.ts       POST = validate, recompute weight, insert
+src/components/
+  EnterLeaderboard.tsx   submit dialog, prefilled from the local log
+```
 
 ## Build discipline
 

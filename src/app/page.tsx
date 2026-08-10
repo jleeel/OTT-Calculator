@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import EnterLeaderboard, {
+  type LatestMeasurement,
+} from "@/components/EnterLeaderboard";
 import { daysBetween, lbPerDay, ottWeight, totalOtt, weightRange } from "@/lib/ott";
 
 /**
@@ -327,6 +330,14 @@ export default function CalculatorPage() {
     }));
   }
 
+  // The leaderboard entry is built from the most recent logged measurement,
+  // not from whatever is currently typed into the boxes.
+  const latestMeasurement: LatestMeasurement | null = useMemo(() => {
+    const last = active.entries[active.entries.length - 1];
+    if (!last) return null;
+    return { date: last.date, c: last.c, ss: last.ss, ee: last.ee };
+  }, [active]);
+
   // Newest first, but each row still needs the entry before it to show the gain.
   const rows = active.entries
     .map((entry, index) => ({ entry, index, previous: active.entries[index - 1] }))
@@ -468,6 +479,10 @@ export default function CalculatorPage() {
           >
             {justLogged ? "Logged" : "Log measurement"}
           </button>
+        </div>
+
+        <div className="mt-2.5">
+          <EnterLeaderboard fruitName={active.name} latest={latestMeasurement} />
         </div>
       </section>
 
