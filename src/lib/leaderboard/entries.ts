@@ -5,7 +5,13 @@ import {
   createServerSupabaseClient,
   createServiceRoleClient,
 } from "@/lib/supabase/server";
-import { computeFlags, type Flag } from "./flags";
+import {
+  ImplausibleGrowthError,
+  MAX_LB_PER_DAY,
+  computeFlags,
+  impliedLbPerDay,
+  type Flag,
+} from "./flags";
 import type { EntryInput } from "./validation";
 
 /** One row of the board: the most recent measurement for a grower's pumpkin. */
@@ -112,14 +118,25 @@ export async function insertEntry(
   if (priorError) console.error("[leaderboard] prior entry lookup", priorError);
 
   const estimated_lbs = estimateLbs(input);
+
+  const previous = prior
+    ? {
+        measured_on: String(prior.measured_on),
+        estimated_lbs: num(prior.estimated_lbs),
+      }
+    : null;
+
+  // The one refusal. Above MAX_LB_PER_DAY the entry is not unusual, it is
+  // impossible, and the row would sit on a public board misleading everyone
+  // who reads it. Checked before the write so nothing has to be undone.
+  const rate = impliedLbPerDay({ estimated_lbs, measured_on: input.measured_on }, previous);
+  if (rate !== null && rate > MAX_LB_PER_DAY) {
+    throw new ImplausibleGrowthError(rate, previous!.measured_on);
+  }
+
   const flags = computeFlags(
     { ...input, estimated_lbs },
-    prior
-      ? {
-          measured_on: String(prior.measured_on),
-          estimated_lbs: num(prior.estimated_lbs),
-        }
-      : null,
+    previous,
   );
 
   const { data, error } = await supabase

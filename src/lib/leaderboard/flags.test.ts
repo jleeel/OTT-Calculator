@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { FLAG_NOTE, computeFlags, type FlagInput } from "./flags";
+import {
+  FLAG_NOTE,
+  FLAG_RULES,
+  ImplausibleGrowthError,
+  MAX_LB_PER_DAY,
+  computeFlags,
+  impliedLbPerDay,
+  type FlagInput,
+} from "./flags";
 
 function entry(overrides: Partial<FlagInput> = {}): FlagInput {
   return {
@@ -146,5 +154,77 @@ describe("FLAG_NOTE", () => {
   it("stays neutral and never accuses", () => {
     expect(FLAG_NOTE).toBe("Unusual measurement, double-check the tape.");
     expect(FLAG_NOTE).not.toMatch(/fake|suspicious|invalid|cheat|fraud|wrong|lie/i);
+  });
+});
+
+describe("impliedLbPerDay", () => {
+  const entry = { estimated_lbs: 1000, measured_on: "2025-09-10" };
+
+  it("is the gain divided by the days between", () => {
+    expect(
+      impliedLbPerDay(entry, { measured_on: "2025-09-05", estimated_lbs: 900 }),
+    ).toBeCloseTo(20, 10);
+  });
+
+  it("cannot be computed without a prior entry", () => {
+    expect(impliedLbPerDay(entry, null)).toBeNull();
+    expect(impliedLbPerDay(entry, undefined)).toBeNull();
+  });
+
+  it("refuses to divide by zero on a same-day re-measure", () => {
+    expect(
+      impliedLbPerDay(entry, { measured_on: "2025-09-10", estimated_lbs: 900 }),
+    ).toBeNull();
+  });
+
+  it("returns null rather than a negative rate for a backwards pair", () => {
+    expect(
+      impliedLbPerDay(entry, { measured_on: "2025-09-20", estimated_lbs: 900 }),
+    ).toBeNull();
+  });
+
+  it("goes negative when the fruit shrank, which is not an error", () => {
+    expect(
+      impliedLbPerDay(entry, { measured_on: "2025-09-05", estimated_lbs: 1100 }),
+    ).toBeLessThan(0);
+  });
+
+  it("survives an unparseable date", () => {
+    expect(
+      impliedLbPerDay(entry, { measured_on: "nonsense", estimated_lbs: 900 }),
+    ).toBeNull();
+  });
+});
+
+describe("MAX_LB_PER_DAY", () => {
+  it("sits past the record rather than at a plausible number", () => {
+    // The best fruit ever grown put on roughly 50-60 lb on their best day, so
+    // this refuses corrupt data without refusing a world-class pumpkin.
+    expect(MAX_LB_PER_DAY).toBe(70);
+    expect(MAX_LB_PER_DAY).toBeGreaterThan(FLAG_RULES.jumpLbPerDay);
+  });
+
+  it("leaves a band that is flagged but still accepted", () => {
+    // 40-70 is unusual and gets a marker; only past 70 is an entry refused.
+    const flagged = impliedLbPerDay(
+      { estimated_lbs: 1000, measured_on: "2025-09-10" },
+      { measured_on: "2025-09-09", estimated_lbs: 950 },
+    );
+    expect(flagged).toBeGreaterThan(FLAG_RULES.jumpLbPerDay);
+    expect(flagged).toBeLessThan(MAX_LB_PER_DAY);
+  });
+});
+
+describe("ImplausibleGrowthError", () => {
+  it("names the rate and the date it was measured against", () => {
+    const error = new ImplausibleGrowthError(214.5, "2025-09-08");
+    expect(error.message).toContain("215 lb a day");
+    expect(error.message).toContain("2025-09-08");
+  });
+
+  it("points at the likely cause instead of accusing anyone", () => {
+    const error = new ImplausibleGrowthError(200, "2025-09-08");
+    expect(error.message).toMatch(/mistyped date is the usual cause/);
+    expect(error.message).not.toMatch(/fake|suspicious|invalid|cheat|fraud|lie/i);
   });
 });

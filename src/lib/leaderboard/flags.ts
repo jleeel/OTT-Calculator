@@ -91,3 +91,54 @@ export function computeFlags(
  * says nothing about the grower and nothing about intent.
  */
 export const FLAG_NOTE = "Unusual measurement, double-check the tape.";
+
+/* -------------------------------------------------------------------------
+ * The one rule that refuses an entry.
+ *
+ * Everything above this line is informational and never blocks — that is a
+ * deliberate, documented decision. This is different in kind: not "unusual"
+ * but "not physically possible", and a number that far out is corrupt data
+ * rather than a surprising result. The best fruit ever grown put on somewhere
+ * around 50-60 lb on their best day, so 70 is comfortably past the record
+ * rather than a judgement about any particular grower.
+ *
+ * A refusal is still not an accusation. Overwhelmingly the cause is a mistyped
+ * date — an entry dated a day after the last one instead of a fortnight — so
+ * the message says that and sends them back to the fields.
+ * ---------------------------------------------------------------------- */
+
+export const MAX_LB_PER_DAY = 70;
+
+/**
+ * Pounds per day implied between the previous entry and this one.
+ *
+ * Null when it cannot be computed: no prior entry, an unparseable date, or the
+ * same day twice (which would divide by zero). Negative when the fruit shrank,
+ * which is a re-measurement rather than an error and is left alone.
+ */
+export function impliedLbPerDay(
+  entry: Pick<FlagInput, "estimated_lbs" | "measured_on">,
+  previous: PreviousEntry | null | undefined,
+): number | null {
+  if (!previous) return null;
+  const days = daysApart(previous.measured_on, entry.measured_on);
+  if (!Number.isFinite(days) || days <= 0) return null;
+  return (entry.estimated_lbs - previous.estimated_lbs) / days;
+}
+
+/** Refusal, not a flag. Carried to the route so it can answer 400, not 502. */
+export class ImplausibleGrowthError extends Error {
+  readonly lbPerDay: number;
+  readonly since: string;
+
+  constructor(lbPerDay: number, since: string) {
+    super(
+      `That is ${Math.round(lbPerDay)} lb a day since ${since}, which is beyond ` +
+        `anything on record. Check the date and the three measurements — a ` +
+        `mistyped date is the usual cause.`,
+    );
+    this.name = "ImplausibleGrowthError";
+    this.lbPerDay = lbPerDay;
+    this.since = since;
+  }
+}

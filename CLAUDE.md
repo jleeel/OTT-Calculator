@@ -111,6 +111,14 @@ caught by them. Re-derive from the primary GPC chart before changing anything.
 - Plausibility flags are computed on insert and stored in `flags[]`. They never
   block. The real integrity mechanism is the **public measurement history**,
   one tap from each board row.
+- **One rule does block, and it is not a flag.** Above `MAX_LB_PER_DAY` (70)
+  the insert is refused with a 400. That is a different claim from the flags:
+  not "unusual" but "not physically possible" — the best fruit ever grown put
+  on roughly 50–60 lb on their best day, so 70 is past the record rather than a
+  judgement about a grower. Between the `jump` flag (40) and this, an entry is
+  marked but still accepted. The refusal names the mistyped date as the likely
+  cause and never accuses; a refused entry does not burn a rate-limit slot,
+  because the session cookie is only written on success.
 
 - `/diagnose` is rate limited **by IP, in Postgres**, not by cookie. A cookie
   limit is a courtesy and clearing it resets the count; every call here costs
