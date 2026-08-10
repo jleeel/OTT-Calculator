@@ -1,28 +1,128 @@
 @import "tailwindcss";
 
 /*
- * Design tokens carried over from the original AgOptics calculator: navy
- * masthead, white cards on a light grey shell, blue accents, green for growth.
+ * Warm harvest. The page is grounded in vine green; cards are cream sitting on
+ * it. That inversion is deliberate — a field at dusk, not a stationery set.
  */
 @theme {
-  --color-navy: #22314f;
-  --color-blue: #2b5c9b;
-  --color-blue-soft: #e8effa;
-  --color-green: #2d7a4f;
-  --color-green-soft: #e8f5ed;
-  --color-shell: #f4f5f7;
-  --color-card: #ffffff;
-  --color-line: #e3e6ea;
-  --color-ink: #1c2430;
-  --color-muted: #6b7684;
+  --color-vine: #1f3d2b;
+  --color-pumpkin: #e2610e;
+  --color-gold: #f0a81c;
+  --color-cream: #fbf3e2;
+  --color-ink: #2a2118;
+  --color-sage: #6e7f63;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+  /* Derived from vine and cream for depth. No new hues. */
+  --color-vine-deep: #162c1f;
+  --color-vine-soft: #2f5a3f;
+  --color-cream-dim: #f2e7cf;
+  --color-cream-edge: #e6d8ba;
+
+  /* One fixed colour per measurement, matching chip, input and tape. */
+  --color-tape-1: #1f5133;
+  --color-tape-2: #2c7fd0;
+  --color-tape-3: #e2610e;
+
+  --font-display: var(--font-oswald), "Arial Narrow", sans-serif;
+  --font-sans: var(--font-work-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+
+  /* Type scale. The weight readout sits far above everything else. */
+  --text-micro: 0.6875rem;
+  --text-tiny: 0.8125rem;
+  --text-small: 0.9375rem;
+  --text-base: 1rem;
+  --text-lead: 1.125rem;
+  --text-title: 1.5rem;
+  --text-hero: 2rem;
 }
 
 body {
-  background: var(--color-shell);
+  background: var(--color-vine);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/*
+ * Oswald. Heavy condensed uppercase — county-fair banner, not editorial serif.
+ * Set from the supplied design reference.
+ */
+.display-face {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.005em;
+}
+
+/* All measurements and weights, so digits do not jitter as they update. */
+.numerals {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* The one enormous thing on the page. */
+.weight-readout {
+  font-size: clamp(4.75rem, 25vw, 7.5rem);
+  line-height: 0.88;
+  font-weight: 700;
+}
+
+/*
+ * Tape draw-in. pathLength="1" normalises every path so one keyframe works for
+ * all three regardless of their real lengths. The reduced-motion block below
+ * collapses the duration, so the highlight still lands but nothing animates.
+ */
+@keyframes tape-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.tape-draw {
+  stroke-dasharray: 1;
+  animation: tape-draw 620ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Every interactive target clears 44px. */
+button,
+[role="button"],
+input,
+summary,
+a.tap {
+  min-height: 44px;
+}
+
+input {
+  font-size: max(1rem, var(--text-base)); /* never trigger iOS zoom on focus */
+}
+
+summary {
+  cursor: pointer;
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

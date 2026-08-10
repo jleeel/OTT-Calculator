@@ -1,59 +1,90 @@
 import type { Metadata, Viewport } from "next";
+import { IBM_Plex_Mono, Oswald, Work_Sans } from "next/font/google";
 import Link from "next/link";
+import Nav from "@/components/Nav";
 import "./globals.css";
 
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-oswald",
+  display: "swap",
+});
+
+const workSans = Work_Sans({
+  subsets: ["latin"],
+  variable: "--font-work-sans",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-plex-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "Giant Pumpkin Weight Calculator · AgOptics",
+  title: "Giant Pumpkin Calculator",
   description:
-    "Estimate giant pumpkin weight with the over-the-top (OTT) method using the 2025 GPC Atlantic Giant chart, then track growth week over week.",
+    "Measure your giant pumpkin with a tape and get its estimated weight, then watch it grow through the season.",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#1f3d2b",
 };
-
-const NAV = [
-  { href: "/", label: "Calculator" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/diagnose", label: "Diagnose" },
-] as const;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${oswald.variable} ${workSans.variable} ${plexMono.variable}`}
+    >
       <body>
-        <div className="mx-auto max-w-[620px] px-4 pt-4 pb-10">
-          <header className="mb-[18px] rounded-[14px] bg-navy px-[22px] py-5 text-white">
-            <h1 className="text-[21px] leading-[1.25] font-normal tracking-[-0.01em]">
-              Giant Pumpkin Weight Calculator
-            </h1>
-            <p className="mt-1.5 text-[13px] text-[#b9c4d6]">
-              Over-the-top (OTT) method · 2025 GPC chart
-            </p>
-            <nav className="mt-3.5 flex gap-2">
-              {NAV.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="rounded-full border border-white/20 px-3 py-1.5 text-[13px] font-semibold text-[#b9c4d6] transition-colors hover:border-white/40 hover:text-white"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+        <div className="mx-auto flex min-h-screen max-w-[640px] flex-col px-4 pb-8">
+          <header className="pt-6 pb-5">
+            <Link href="/" className="tap block text-center">
+              <span className="display-face block text-[1.9rem] leading-[0.95] text-cream">
+                Giant Pumpkin
+              </span>
+              <span className="mt-1 flex items-center justify-center gap-2">
+                <svg viewBox="0 0 34 12" className="h-3 w-8 text-[#3F7350]" fill="currentColor" aria-hidden>
+                  <path d="M34 6C26 1 16 0 8 3c3 4 9 6 15 5-5 2-11 2-15 0 5 4 16 4 26-2z" />
+                </svg>
+                <span className="display-face text-[1.9rem] leading-[0.95] text-gold">
+                  Calculator
+                </span>
+                <svg viewBox="0 0 34 12" className="h-3 w-8 scale-x-[-1] text-[#3F7350]" fill="currentColor" aria-hidden>
+                  <path d="M34 6C26 1 16 0 8 3c3 4 9 6 15 5-5 2-11 2-15 0 5 4 16 4 26-2z" />
+                </svg>
+              </span>
+            </Link>
+
+            <Nav />
           </header>
 
-          {children}
+          <main className="flex-1">{children}</main>
 
-          <div className="mt-5 border-t border-line pt-[22px] text-center">
-            <div className="text-sm font-bold text-navy">
-              AgOptics · Tulare, California
-            </div>
-            <div className="mt-1 text-xs font-bold tracking-[0.07em] text-green">
-              DATA. INSIGHT. BETTER DECISIONS.
-            </div>
-          </div>
+          <footer className="mt-8 border-t border-vine-soft pt-5">
+            <p className="text-tiny leading-relaxed text-cream/55">
+              Weights come from the 2025 GPC Atlantic Giant chart. Estimates run
+              about ±5% and assume Atlantic Giant genetics. Wall thickness is
+              what makes a pumpkin heavy or light to the chart, and you cannot
+              see it from outside. Your measurements stay in this browser.
+            </p>
+            <p className="mt-3 text-tiny leading-relaxed text-cream/55">
+              The projection uses a generic growth curve and assumes typical
+              maturity timing. Individual fruit vary widely, and a pumpkin that
+              colors up early will usually finish below its projection. In hot
+              climates plants often decline before the growth curve completes,
+              so projections without an end date tend to run high.
+            </p>
+            <p className="mt-3 text-micro tracking-wide text-cream/40 uppercase">
+              Built by AgOptics · Tulare, California
+            </p>
+          </footer>
         </div>
       </body>
     </html>

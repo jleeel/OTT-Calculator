@@ -33,8 +33,8 @@ type Status =
   | { kind: "error"; message: string; fields: Record<string, string> };
 
 const FIELD =
-  "w-full rounded-[10px] border border-line bg-white px-3.5 py-3 text-base text-ink focus:outline-2 focus:outline-blue focus:-outline-offset-1";
-const LABEL = "mb-1.5 block text-[13px] text-muted";
+  "w-full rounded-xl border border-cream-edge bg-white px-3.5 py-3 text-base text-ink focus:outline-2 focus:outline-blue focus:-outline-offset-1";
+const LABEL = "mb-1.5 block text-tiny text-sage";
 
 function loadGrower(): { grower_name: string; location: string } {
   try {
@@ -207,19 +207,19 @@ export default function EnterLeaderboard({
         type="button"
         onClick={openDialog}
         disabled={!latest}
-        className="w-full cursor-pointer rounded-[10px] border border-blue bg-white p-3.5 text-[15px] font-bold text-blue disabled:cursor-default disabled:border-line disabled:text-muted"
+        className="w-full rounded-xl border-2 border-vine bg-transparent px-5 text-small font-semibold text-vine transition-colors hover:bg-vine hover:text-cream disabled:border-cream-edge disabled:text-sage disabled:hover:bg-transparent disabled:hover:text-sage"
       >
         Enter the leaderboard
       </button>
       {!latest && (
-        <p className="mt-2 text-center text-[12.5px] text-muted">
-          Log a measurement first — the entry is built from your latest one.
+        <p className="mt-2 text-center text-tiny text-sage">
+          Save a measurement first — the entry is built from your most recent one.
         </p>
       )}
 
       {open && form && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-navy/40 p-0 sm:items-center sm:p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-vine/60 p-0 sm:items-center sm:p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) close();
           }}
@@ -228,19 +228,19 @@ export default function EnterLeaderboard({
             role="dialog"
             aria-modal="true"
             aria-labelledby="enter-leaderboard-title"
-            className="max-h-[92vh] w-full max-w-[560px] overflow-y-auto rounded-t-[14px] bg-card p-5 sm:rounded-[14px]"
+            className="max-h-[92vh] w-full max-w-[560px] overflow-y-auto rounded-t-[14px] bg-cream p-5 sm:rounded-2xl"
           >
             <div className="mb-3.5 flex items-baseline justify-between gap-3">
               <h2
                 id="enter-leaderboard-title"
-                className="text-xs font-bold tracking-[0.09em] text-blue uppercase"
+                className="text-xs font-bold tracking-[0.09em] text-vine uppercase"
               >
                 Enter the leaderboard
               </h2>
               <button
                 type="button"
                 onClick={close}
-                className="cursor-pointer text-[13px] font-semibold text-muted hover:text-ink"
+                className="cursor-pointer text-tiny font-semibold text-sage hover:text-vine"
               >
                 Close
               </button>
@@ -248,34 +248,32 @@ export default function EnterLeaderboard({
 
             {status.kind === "done" ? (
               <div>
-                <p className="rounded-[11px] bg-green-soft px-[18px] py-4 text-[15px] font-semibold text-green">
+                <p className="rounded-xl bg-vine px-[18px] py-4 text-small font-semibold text-cream">
                   You are on the board.
                 </p>
-                <p className="mt-3 text-sm leading-relaxed text-muted">
-                  Ranked by measured OTT inches. Re-measure and submit again any
-                  time — the board keeps your most recent entry for this
-                  pumpkin.
+                <p className="mt-3 text-sm leading-relaxed text-sage">
+                  The board ranks on measured inches. Measure again any time — it keeps the most recent entry for this pumpkin.
                 </p>
                 <div className="mt-4 flex gap-2.5">
                   <Link
                     href="/leaderboard"
-                    className="flex-1 rounded-[10px] bg-navy p-3.5 text-center text-[15px] font-bold text-white"
+                    className="flex-1 rounded-xl bg-gold p-3.5 text-center text-small font-bold text-ink"
                   >
                     See the board
                   </Link>
                   <button
                     type="button"
                     onClick={close}
-                    className="flex-1 cursor-pointer rounded-[10px] border border-line bg-white p-3.5 text-[15px] font-bold text-muted"
+                    className="flex-1 cursor-pointer rounded-xl border border-cream-edge bg-white p-3.5 text-small font-bold text-sage"
                   >
-                    Back to calculator
+                    Keep measuring
                   </button>
                 </div>
               </div>
             ) : (
               <form onSubmit={submit} noValidate>
                 {status.kind === "error" && (
-                  <p className="mb-3.5 rounded-[11px] bg-[#fdecec] px-[18px] py-3.5 text-[13px] font-semibold text-[#a3282a]">
+                  <p className="mb-3.5 rounded-xl bg-pumpkin/10 px-[18px] py-3.5 text-tiny font-semibold text-[#8f3c05]">
                     {status.message}
                   </p>
                 )}
@@ -293,7 +291,7 @@ export default function EnterLeaderboard({
                     onChange={(e) => set("grower_name", e.target.value)}
                   />
                   {fieldError("grower_name") && (
-                    <p className="mt-1 text-[12.5px] text-[#a3282a]">
+                    <p className="mt-1 text-tiny text-[#8f3c05]">
                       {fieldError("grower_name")}
                     </p>
                   )}
@@ -312,7 +310,7 @@ export default function EnterLeaderboard({
                     onChange={(e) => set("location", e.target.value)}
                   />
                   {fieldError("location") && (
-                    <p className="mt-1 text-[12.5px] text-[#a3282a]">
+                    <p className="mt-1 text-tiny text-[#8f3c05]">
                       {fieldError("location")}
                     </p>
                   )}
@@ -330,7 +328,7 @@ export default function EnterLeaderboard({
                     onChange={(e) => set("pumpkin_name", e.target.value)}
                   />
                   {fieldError("pumpkin_name") && (
-                    <p className="mt-1 text-[12.5px] text-[#a3282a]">
+                    <p className="mt-1 text-tiny text-[#8f3c05]">
                       {fieldError("pumpkin_name")}
                     </p>
                   )}
@@ -351,12 +349,12 @@ export default function EnterLeaderboard({
                       <input
                         id={key}
                         inputMode="decimal"
-                        className={`${FIELD} px-2.5 text-right tabular-nums`}
+                        className={`${FIELD} px-2.5 text-right numerals`}
                         value={form[key]}
                         onChange={(e) => set(key, e.target.value)}
                       />
                       {fieldError(key) && (
-                        <p className="mt-1 text-[12.5px] text-[#a3282a]">
+                        <p className="mt-1 text-tiny text-[#8f3c05]">
                           {fieldError(key)}
                         </p>
                       )}
@@ -377,14 +375,14 @@ export default function EnterLeaderboard({
                       onChange={(e) => set("measured_on", e.target.value)}
                     />
                     {fieldError("measured_on") && (
-                      <p className="mt-1 text-[12.5px] text-[#a3282a]">
+                      <p className="mt-1 text-tiny text-[#8f3c05]">
                         {fieldError("measured_on")}
                       </p>
                     )}
                   </div>
                   <div className="flex-1">
                     <label className={LABEL} htmlFor="pollination_date">
-                      Pollinated <span className="text-muted">(optional)</span>
+                      Pollinated <span className="text-sage">(optional)</span>
                     </label>
                     <input
                       id="pollination_date"
@@ -394,7 +392,7 @@ export default function EnterLeaderboard({
                       onChange={(e) => set("pollination_date", e.target.value)}
                     />
                     {fieldError("pollination_date") && (
-                      <p className="mt-1 text-[12.5px] text-[#a3282a]">
+                      <p className="mt-1 text-tiny text-[#8f3c05]">
                         {fieldError("pollination_date")}
                       </p>
                     )}
@@ -414,17 +412,17 @@ export default function EnterLeaderboard({
                       value={passcode}
                       onChange={(e) => setPasscode(e.target.value)}
                     />
-                    <p className="mt-1 text-[12.5px] text-muted">
+                    <p className="mt-1 text-tiny text-sage">
                       Asked once, then remembered on this device.
                     </p>
                   </div>
                 )}
 
-                <div className="mb-3.5 rounded-[11px] bg-blue-soft px-[18px] py-3.5">
-                  <div className="text-[13px] font-bold text-blue">
+                <div className="mb-3.5 rounded-xl bg-cream-dim px-[18px] py-3.5">
+                  <div className="text-tiny font-bold text-vine">
                     Posting as
                   </div>
-                  <div className="mt-0.5 text-[15px] font-semibold text-navy tabular-nums">
+                  <div className="mt-0.5 text-small font-semibold text-vine numerals">
                     {(
                       Number.parseFloat(form.circumference) || 0
                     ) +
@@ -432,7 +430,7 @@ export default function EnterLeaderboard({
                       (Number.parseFloat(form.end_to_end) || 0)}
                     &quot; OTT · ~{Math.round(estimate).toLocaleString("en-US")} lb
                   </div>
-                  <div className="mt-1 text-[12.5px] text-blue">
+                  <div className="mt-1 text-tiny text-vine">
                     The board ranks on OTT inches. Weight is recalculated on the
                     server from these three numbers.
                   </div>
@@ -441,9 +439,9 @@ export default function EnterLeaderboard({
                 <button
                   type="submit"
                   disabled={status.kind === "submitting"}
-                  className="w-full cursor-pointer rounded-[10px] bg-navy p-3.5 text-[15px] font-bold text-white disabled:cursor-default disabled:bg-[#cfd5de]"
+                  className="w-full cursor-pointer rounded-xl bg-gold p-3.5 text-small font-bold text-ink disabled:cursor-default disabled:bg-cream-edge"
                 >
-                  {status.kind === "submitting" ? "Posting…" : "Post to leaderboard"}
+                  {status.kind === "submitting" ? "Posting your pumpkin…" : "Post to the leaderboard"}
                 </button>
               </form>
             )}

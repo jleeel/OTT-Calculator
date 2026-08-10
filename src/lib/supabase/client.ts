@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { normalizeSupabaseUrl } from "./url";
 
 /**
  * Supabase client for the browser.
@@ -18,5 +19,6 @@ export function createClient() {
     );
   }
 
-  return createBrowserClient(url, key);
+  // Same normalising as the server clients — see url.ts.
+  return createBrowserClient(normalizeSupabaseUrl(url), key);
 }

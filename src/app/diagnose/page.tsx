@@ -1,22 +1,34 @@
 import type { Metadata } from "next";
+import DiagnoseForm from "@/components/DiagnoseForm";
+import { DIAGNOSE_DISCLAIMER } from "@/lib/diagnose/types";
 
 export const metadata: Metadata = {
-  title: "Diagnose · Giant Pumpkin Weight Calculator",
+  title: "Plant help · Giant Pumpkin Calculator",
   description:
-    "Work out why a giant pumpkin is running heavy or light to the OTT chart.",
+    "Photograph a giant pumpkin leaf, vine or fruit and get an idea of what is going on with it.",
 };
 
 export default function DiagnosePage() {
   return (
-    <section className="mb-4 rounded-[14px] border border-line bg-card p-5">
-      <h2 className="mb-3.5 text-xs font-bold tracking-[0.09em] text-blue uppercase">
-        Diagnose
-      </h2>
-      <p className="text-sm leading-relaxed text-muted">
-        Nothing here yet. This is where a fruit&apos;s measurement history gets
-        read for the things a single weight cannot tell you — stalled growth,
-        a shape drifting off the chart, heavy-to-chart or light-to-chart trends.
-      </p>
-    </section>
+    <>
+      <section className="mb-4 rounded-2xl border border-cream-edge bg-cream p-5">
+        <h1 className="display-face text-title leading-tight text-vine">
+          What is wrong with my plant?
+        </h1>
+        <p className="mt-2 text-small leading-relaxed text-sage">
+          Take a photo of the leaf, vine or fruit that is bothering you. You get
+          the most likely cause, what else it could be, and what to go and check
+          in the patch.
+        </p>
+        <p className="mt-3 text-tiny leading-[1.6] text-sage">
+          It will not name a product or a rate. That is on purpose — what is
+          legal to apply depends on the crop, the county and the label, and in
+          California most agricultural pesticide use needs a written
+          recommendation from a licensed PCA. {DIAGNOSE_DISCLAIMER}
+        </p>
+      </section>
+
+      <DiagnoseForm />
+    </>
   );
 }
