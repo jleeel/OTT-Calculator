@@ -8,16 +8,17 @@
  * Already filled -> persistent gold path
  * Neither        -> quiet sage
  *
- * On the drawing itself: the body is built from six overlapping lobe ellipses
- * rather than one outline, which gives a genuinely bumpy silhouette and turns
- * the overlaps into ribs for free. The lobes are deliberately NOT mirrored —
- * they narrow toward the right to read as three-quarter view, and the tones
- * step darker the same way for a single light source up and to the left. The
- * proportions are Atlantic Giant: wide, squat, heavy in the shoulders, nothing
- * like the tall jack-o-lantern shape.
+ * On the drawing: this is an Atlantic Giant, not a carving pumpkin. Competition
+ * fruit grows so fast the ribs stretch into broad soft folds, and it slumps and
+ * spreads under its own weight — roughly twice as wide as it is tall, flat
+ * where it sits, with a bumpy irregular outline and a stubby cut stem in a
+ * dish. The outline is drawn with deliberate lumps rather than a smooth oval;
+ * a clean dome reads as a bread roll, and neat symmetrical lobes read as a
+ * jack-o-lantern. Skin is a muted buff-orange because show fruit runs pale,
+ * which also lets the tapes carry the contrast.
  *
- * Every tape rides on a cream casing stroke so it reads as lying on the fruit
- * instead of merging into the ribs beneath it.
+ * Every tape rides on a vine keyline so it reads as lying on the fruit instead
+ * of merging into the folds beneath it.
  *
  * The draw animation is a CSS keyframe on a keyed element, so refocusing an
  * input replays it. `prefers-reduced-motion` collapses the duration globally
@@ -31,14 +32,28 @@ type Props = {
   filled: Record<TapeKey, boolean>;
 };
 
-/** Front-left catches the light; tone steps down toward the shaded right. */
-const LOBES: { cx: number; cy: number; rx: number; ry: number; fill: string }[] = [
-  { cx: 74, cy: 161, rx: 28, ry: 53, fill: "#E9A937" },
-  { cx: 110, cy: 156, rx: 35, ry: 58, fill: "#F3B950" },
-  { cx: 153, cy: 154, rx: 39, ry: 60, fill: "#EFAF41" },
-  { cx: 197, cy: 158, rx: 33, ry: 56, fill: "#E29F31" },
-  { cx: 234, cy: 164, rx: 25, ry: 50, fill: "#D69227" },
-  { cx: 253, cy: 170, rx: 17, ry: 44, fill: "#C8851F" },
+/**
+ * Lumpy and asymmetric on purpose. Each segment bulges a little differently,
+ * so the silhouette has shoulders and dents instead of one smooth arc.
+ */
+const BODY =
+  "M 36 186 C 31 164, 42 138, 62 121 " +
+  "C 80 105, 106 95, 134 92 " +
+  "C 158 89, 182 91, 204 99 " +
+  "C 228 108, 249 121, 264 139 " +
+  "C 279 158, 287 178, 280 195 " +
+  "C 271 209, 244 217, 206 219 " +
+  "C 166 222, 122 221, 88 216 " +
+  "C 60 212, 40 202, 36 186 Z";
+
+/** Broad soft folds and slump creases. Irregular spacing, varied weight. */
+const FOLDS = [
+  { d: "M 156 100 C 126 124, 102 158, 96 200", w: 2.3, o: 0.2 },
+  { d: "M 163 99 C 154 138, 150 180, 154 219", w: 1.7, o: 0.15 },
+  { d: "M 170 100 C 190 132, 206 170, 212 210", w: 2.5, o: 0.2 },
+  { d: "M 176 103 C 212 120, 246 146, 268 180", w: 2, o: 0.17 },
+  { d: "M 148 100 C 112 112, 74 130, 48 160", w: 2.1, o: 0.17 },
+  { d: "M 58 198 C 108 210, 176 213, 240 202", w: 1.6, o: 0.12 },
 ];
 
 const TAPES: {
@@ -51,22 +66,22 @@ const TAPES: {
   {
     key: "ss",
     label: "2",
-    front: "M 74 210 C 54 152, 96 94, 170 94 C 236 96, 264 154, 246 210",
-    chip: [225, 114],
+    front: "M 66 212 C 36 180, 52 108, 140 94 C 226 82, 288 136, 262 210",
+    chip: [255, 134],
   },
   {
     key: "ee",
     label: "3",
-    front: "M 126 213 C 88 186, 84 118, 142 96",
-    behind: "M 142 96 C 206 74, 258 106, 264 148",
-    chip: [98, 153],
+    front: "M 126 220 C 82 198, 56 130, 138 92",
+    behind: "M 138 92 C 214 74, 282 116, 288 162",
+    chip: [85, 162],
   },
   {
     key: "c",
     label: "1",
-    front: "M 46 156 C 54 182, 102 194, 158 194 C 214 194, 260 182, 268 156",
-    behind: "M 46 156 C 54 130, 102 118, 158 118 C 214 118, 260 130, 268 156",
-    chip: [158, 194],
+    front: "M 34 180 C 46 202, 104 210, 158 210 C 214 210, 270 198, 283 178",
+    behind: "M 34 180 C 46 158, 104 148, 158 148 C 214 148, 270 158, 283 178",
+    chip: [158, 210],
   },
 ];
 
@@ -86,43 +101,65 @@ export default function PumpkinDiagram({ active, filled }: Props) {
       role="img"
       aria-label="A giant pumpkin with the three tape measurements drawn over it: a band around the widest point, a wrap from the ground over the top and back down across the vine, and a wrap from the ground over the top from stem to blossom."
     >
+      <defs>
+        <clipPath id="pumpkin-body">
+          <path d={BODY} />
+        </clipPath>
+        {/* Light off the upper left shoulder, shade into the lower right. */}
+        <radialGradient id="pumpkin-skin" cx="34%" cy="28%" r="88%">
+          <stop offset="0%" stopColor="#F5C079" />
+          <stop offset="52%" stopColor="#E7A85E" />
+          <stop offset="100%" stopColor="#C57F38" />
+        </radialGradient>
+      </defs>
+
       <line
-        x1="14" y1="215" x2="306" y2="215"
+        x1="14" y1="217" x2="306" y2="217"
         stroke="var(--color-sage)" strokeOpacity="0.45"
         strokeWidth="1.5" strokeLinecap="round"
       />
-      <ellipse cx="158" cy="214" rx="104" ry="7" fill="var(--color-ink)" opacity="0.13" />
+      <ellipse cx="158" cy="216" rx="120" ry="7" fill="var(--color-ink)" opacity="0.14" />
 
-      {/* stem: behind the body so it sits into the shoulder, not on top of it */}
+      {/* stubby cut stem, thick at the shoulder */}
       <g>
         <path
-          d="M 143 104 C 142 88, 138 74, 131 62 C 127 55, 133 47, 140 50
-             C 148 54, 154 70, 158 86 C 160 94, 161 100, 161 104 Z"
+          d="M 154 97 C 153 86, 151 78, 148 70 C 146 63, 156 60, 163 63
+             C 170 66, 174 78, 176 97 Z"
           fill="var(--color-vine)"
         />
         <path
-          d="M 147 98 C 145 86, 142 76, 137 66"
+          d="M 158 94 C 157 84, 156 76, 154 69"
           fill="none" stroke="#2F5A3F" strokeWidth="1.7" strokeLinecap="round"
+        />
+        <path
+          d="M 167 94 C 166 86, 165 80, 163 73"
+          fill="none" stroke="#2F5A3F" strokeWidth="1.4" strokeLinecap="round"
         />
       </g>
 
-      {/* body */}
-      <g stroke="var(--color-vine)" strokeOpacity="0.8" strokeWidth="2.4">
-        {LOBES.map((l) => (
-          <ellipse
-            key={l.cx}
-            cx={l.cx} cy={l.cy} rx={l.rx} ry={l.ry}
-            fill={l.fill}
+      <g clipPath="url(#pumpkin-body)">
+        <path d={BODY} fill="url(#pumpkin-skin)" />
+        {FOLDS.map((f) => (
+          <path
+            key={f.d}
+            d={f.d}
+            fill="none"
+            stroke="var(--color-vine)"
+            strokeOpacity={f.o}
+            strokeWidth={f.w}
+            strokeLinecap="round"
           />
         ))}
       </g>
 
-      {/* the dish a giant pumpkin carries around its stem */}
+      {/* the dish the stem sits in */}
       <path
-        d="M 128 106 C 138 100, 166 100, 178 108"
-        fill="none" stroke="var(--color-vine)" strokeOpacity="0.35"
+        d="M 136 103 C 148 94, 180 94, 194 105"
+        fill="none" stroke="var(--color-vine)" strokeOpacity="0.3"
         strokeWidth="1.8" strokeLinecap="round"
       />
+
+      <path d={BODY} fill="none" stroke="var(--color-vine)" strokeOpacity="0.85" strokeWidth="2.4" />
 
       {TAPES.map((tape) => {
         const state: State =
@@ -144,14 +181,12 @@ export default function PumpkinDiagram({ active, filled }: Props) {
               />
             )}
 
-            {/* Vine keyline under every tape. Cream was invisible once the body
-                became properly saturated — gold on orange needs a dark edge. */}
             <path
               d={tape.front}
               fill="none"
               stroke="var(--color-vine)"
               strokeOpacity="0.9"
-              strokeWidth={width + 3.5}
+              strokeWidth={width + 2.6}
               strokeLinecap="round"
             />
             <path
