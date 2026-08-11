@@ -77,8 +77,15 @@ const GUIDES: {
   {
     key: "ee",
     label: "3",
-    // Stem end, over the crown, blossom end. Lies on the fruit's surface.
-    front: "M 250 556 C 430 90, 1090 70, 1398 622",
+    // Ground, up past the stem, over the crown, down past the blossom scar,
+    // ground. The GPC tape does not stop at the stem and the scar — both
+    // over-the-top measurements end on the ground, and a guide that stopped at
+    // the stem taught a tape a foot short on each end. Three cubics: the end
+    // drops meet the crown arc tangent-to-tangent so the tape reads as one
+    // unbroken run, and they sit a little inside the silhouette, same as the
+    // crown arc, so the whole length stays on the near side of the fruit.
+    front:
+      "M 268 918 C 190 820, 210 658, 250 556 C 430 90, 1090 70, 1398 622 C 1452 718, 1442 830, 1388 916",
     chip: [776, 225],
   },
   {

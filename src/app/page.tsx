@@ -90,7 +90,9 @@ const MEASUREMENTS: {
     key: "ee",
     step: "3",
     title: "Stem end to blossom end",
-    hint: "Over the top from the stem end to the blossom end.",
+    // The title names the direction; the tape itself ends on the ground, not
+    // at the stem and the scar — stopping there reads a foot short per end.
+    hint: "Over the top, ground to ground, along the fruit.",
   },
 ];
 
