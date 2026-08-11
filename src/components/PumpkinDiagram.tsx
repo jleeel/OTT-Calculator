@@ -11,9 +11,18 @@
  *
  * The overlay shares the photo's coordinate space (viewBox 0 0 1536 1024), so
  * guide positions are in real image pixels and were measured off the file
- * rather than eyeballed: the fruit spans x 25–1507 and y 92–921, the widest
- * row sits at y 562, the stem attaches around (255, 560) and the blossom scar
- * is around (1400, 625).
+ * rather than eyeballed: the fruit spans x 25–1507 and y 91–931, the stem
+ * attaches around (255, 560) and the blossom scar is around (1400, 625).
+ *
+ * The widest row of the silhouette reads as y 562, but that row is the stem
+ * sticking out to the left, not the fruit. Measuring the body alone — the
+ * blossom-side edge is the clean one, since the stem never touches it — the
+ * girth peaks around y 600–680. Guide 1 is drawn at y 642 for that reason, and
+ * it matters: the GPC instruction is that circumference is taken at the LARGEST
+ * circumference, which "will not always be parallel to the ground... on most
+ * large pumpkins the largest circumference is not at the stem/blossom level."
+ * Drawing that band level with the stem teaches the mistake, and a band placed
+ * too high measures short, so the estimate comes in under.
  *
  * Sizes are ~4.6x their intended on-screen pixels, which is the scale factor
  * when the image renders at a 375px viewport, and they scale up with it.
@@ -48,8 +57,21 @@ const GUIDES: {
   {
     key: "ss",
     label: "2",
-    // Ground, over the top, ground — the full side-to-side span.
-    front: "M 150 912 C 40 520, 380 80, 790 74 C 1200 80, 1510 500, 1452 912",
+    // Ground, over the crown, ground — but ACROSS the fruit, not along it.
+    //
+    // This band's plane is perpendicular to the stem-blossom axis, and that
+    // axis runs left-right in this photo, so the plane contains the view
+    // direction and the band is very nearly edge-on: geometrically it projects
+    // to a vertical line through the crown. Drawn as a wide left-to-right arch
+    // it read as a second over-the-top measurement parallel to guide 3, which
+    // is the one thing it is not.
+    //
+    // So it is drawn as a narrow ellipse, as if the camera sat a few degrees
+    // off dead side-on: the near half comes over the crown and down the face
+    // toward the viewer, the far half passes behind and is dashed. Same
+    // front/behind treatment guide 1 gets, turned through ninety degrees.
+    front: "M 782 98 C 940 372, 934 700, 770 924",
+    behind: "M 782 98 C 628 372, 622 700, 770 924",
     chip: [790, 74],
   },
   {
@@ -62,10 +84,11 @@ const GUIDES: {
   {
     key: "c",
     label: "1",
-    // The band around the widest point, level with the ground.
-    front: "M 170 596 C 500 672, 1060 672, 1492 596",
-    behind: "M 170 596 C 500 520, 1060 520, 1492 596",
-    chip: [793, 653],
+    // The band around the largest girth — deliberately drawn BELOW the stem and
+    // blossom, which is where it sits on most large fruit. See the note above.
+    front: "M 135 642 C 480 730, 1090 730, 1497 642",
+    behind: "M 135 642 C 480 556, 1090 556, 1497 642",
+    chip: [800, 706],
   },
 ];
 

@@ -73,13 +73,18 @@ const MEASUREMENTS: {
     key: "c",
     step: "1",
     title: "Around the middle",
-    hint: "The widest way around, level with the ground.",
+    // Not "level with the ground": the GPC instruction is the largest
+    // circumference wherever it falls, which on most big fruit is below the
+    // stem and blossom. A level tape measures short and the estimate runs low.
+    hint: "The biggest way around — usually below the stem and blossom, and not always level.",
   },
   {
     key: "ss",
     step: "2",
     title: "Side to side",
-    hint: "Widest point from side to side.",
+    // "Widest point from side to side" never said the tape goes over the top,
+    // which is the whole difference between this and guide 1.
+    hint: "Over the top, ground to ground, across the fruit.",
   },
   {
     key: "ee",

@@ -4,6 +4,8 @@ import { checkImage, cleanNote } from "@/lib/diagnose/image";
 import {
   DIAGNOSE_MODEL,
   DIAGNOSIS_TOOL,
+  IDENTIFY_PROMPT,
+  IDENTIFY_TOOL,
   SYSTEM_PROMPT,
 } from "@/lib/diagnose/prompt";
 import { clientIp, rateLimitMessage } from "@/lib/diagnose/rate-limit";
@@ -11,7 +13,11 @@ import {
   claimDiagnoseSlot,
   pruneDiagnoseRequests,
 } from "@/lib/diagnose/requests";
-import { parseDiagnosis } from "@/lib/diagnose/types";
+import {
+  parseDiagnosis,
+  parseIdentification,
+  parseMode,
+} from "@/lib/diagnose/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +25,12 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * Diagnose a plant photo.
+ * Diagnose a plant photo, or identify the animal in one.
+ *
+ * Two questions, one route: the model call, the image handling and the rate
+ * limiter are identical, and only the prompt, the tool and the shape of the
+ * answer differ. Splitting it into two routes would have duplicated the
+ * limiter, which is the part that must not be got wrong twice.
  *
  * The API key is read here and only here. It is not prefixed NEXT_PUBLIC_, this
  * module is a route handler, and the SDK is imported nowhere on the client — so
@@ -48,9 +59,14 @@ export async function POST(request: Request) {
     return fail("Could not read that upload.", 400);
   }
 
+  const mode = parseMode(form.get("mode"));
+
   const file = form.get("photo");
   if (!(file instanceof File)) {
-    return fail("Attach a photo of the plant.", 400);
+    return fail(
+      mode === "bug" ? "Attach a photo of the bug." : "Attach a photo of the plant.",
+      400,
+    );
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -76,9 +92,17 @@ export async function POST(request: Request) {
 
   const client = new Anthropic({ apiKey });
 
+  const bug = mode === "bug";
+  const opening = bug
+    ? "I found this in my pumpkin patch."
+    : "Here is my plant.";
+  const question = bug
+    ? "What is it, and should I be worried about it?"
+    : "What is going on with it?";
   const prompt = note
-    ? `Here is my plant. What I am seeing: ${note}`
-    : "Here is my plant. What is going on with it?";
+    ? `${opening} What I am seeing: ${note}`
+    : `${opening} ${question}`;
+  const tool = bug ? IDENTIFY_TOOL : DIAGNOSIS_TOOL;
 
   try {
     const response = await client.messages.create({
@@ -92,10 +116,10 @@ export async function POST(request: Request) {
       // Explicit rather than relying on the default, so the request keeps
       // meaning the same thing if the default moves again.
       thinking: { type: "adaptive" },
-      system: SYSTEM_PROMPT,
-      tools: [DIAGNOSIS_TOOL],
+      system: bug ? IDENTIFY_PROMPT : SYSTEM_PROMPT,
+      tools: [tool],
       // Forced, so the answer always arrives in the shape the page renders.
-      tool_choice: { type: "tool", name: DIAGNOSIS_TOOL.name },
+      tool_choice: { type: "tool", name: tool.name },
       messages: [
         {
           role: "user",
@@ -115,17 +139,25 @@ export async function POST(request: Request) {
     });
 
     const toolUse = response.content.find((block) => block.type === "tool_use");
-    const diagnosis = toolUse ? parseDiagnosis(toolUse.input) : null;
+    const input = toolUse?.input;
 
-    if (!diagnosis) {
-      console.error("[diagnose] no usable tool call", response.stop_reason);
+    // Each mode gets its own key, so a client that asked one question can never
+    // render the other one's answer — a card of empty fields is worse than a
+    // plain error.
+    const diagnosis = bug || !input ? null : parseDiagnosis(input);
+    const identification = bug && input ? parseIdentification(input) : null;
+
+    if (!diagnosis && !identification) {
+      console.error("[diagnose] no usable tool call", mode, response.stop_reason);
       return fail("That photo came back without an answer. Try another one.", 502);
     }
 
     // Fire and forget; the response does not wait on housekeeping.
     void pruneDiagnoseRequests(now);
 
-    return NextResponse.json({ ok: true, diagnosis });
+    return NextResponse.json(
+      bug ? { ok: true, mode, identification } : { ok: true, mode, diagnosis },
+    );
   } catch (error) {
     // Most specific first. APIConnectionError extends APIError in this SDK, so
     // the order below matters.
