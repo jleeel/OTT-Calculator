@@ -23,12 +23,15 @@ export const DIAGNOSE_LIMIT = {
 export const WINDOW_MS = DIAGNOSE_LIMIT.windowMinutes * 60_000;
 
 /**
- * The caller's address, from the proxy headers Vercel sets.
+ * The caller's address, for the rate limiter's identity.
  *
- * `x-forwarded-for` is a chain: the left-most entry is the original client and
- * everything after it is a hop. Vercel appends the real peer address, so the
- * left-most value is client-controlled and cannot be trusted on its own —
- * `x-real-ip`, which the platform sets, is preferred where present.
+ * `x-real-ip` is set by the platform and wins where present. The fallback is
+ * the RIGHT-most `x-forwarded-for` entry: the chain is whatever the client
+ * chose to send plus one address appended by each hop, so the only entry
+ * anyone here can vouch for is the last one, appended by the proxy directly in
+ * front of us. Taking the left-most entry — "the original client" in the
+ * header's optimistic reading — hands anyone a fresh limiter identity per
+ * request on any deployment where x-real-ip is absent.
  */
 export function clientIp(headers: Headers): string | null {
   const real = headers.get("x-real-ip")?.trim();
@@ -36,14 +39,14 @@ export function clientIp(headers: Headers): string | null {
 
   const forwarded = headers.get("x-forwarded-for");
   if (forwarded) {
-    // Left-most *usable* entry. A malformed chain with an empty leading element
-    // should fall through to the next hop rather than drop the caller into the
-    // shared unknown bucket with everyone else behind a bare proxy.
-    const first = forwarded
+    // Right-most *usable* entry, skipping trailing empties from a malformed
+    // chain rather than dropping the caller into the shared null bucket.
+    const parts = forwarded
       .split(",")
       .map((part) => part.trim())
-      .find(Boolean);
-    if (first) return first;
+      .filter(Boolean);
+    const last = parts[parts.length - 1];
+    if (last) return last;
   }
 
   return null;

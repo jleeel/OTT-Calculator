@@ -37,6 +37,19 @@ export type ValidationResult =
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Whether a caller-supplied string is shaped like a UUID. Entry ids and edit
+ * tokens are uuid columns; screening before they reach a query keeps a
+ * malformed value from becoming a Postgres type error (22P02) and leaking a
+ * different status code than a well-formed wrong value would get.
+ */
+export function isUuid(value: string): boolean {
+  return UUID.test(value);
+}
+
 /**
  * Remove markup from free text. React escapes on render, so this is defence in
  * depth rather than the only guard — it also keeps the stored data clean for

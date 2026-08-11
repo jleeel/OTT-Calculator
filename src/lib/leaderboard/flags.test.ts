@@ -5,6 +5,7 @@ import {
   ImplausibleGrowthError,
   MAX_LB_PER_DAY,
   computeFlags,
+  implausibleAgainstNeighbours,
   impliedLbPerDay,
   type FlagInput,
 } from "./flags";
@@ -212,6 +213,79 @@ describe("MAX_LB_PER_DAY", () => {
     );
     expect(flagged).toBeGreaterThan(FLAG_RULES.jumpLbPerDay);
     expect(flagged).toBeLessThan(MAX_LB_PER_DAY);
+  });
+});
+
+describe("implausibleAgainstNeighbours", () => {
+  const measured = { estimated_lbs: 1000, measured_on: "2025-09-10" };
+
+  it("refuses an impossible rate against the prior entry", () => {
+    const verdict = implausibleAgainstNeighbours(
+      measured,
+      { measured_on: "2025-09-09", estimated_lbs: 100 },
+      null,
+    );
+    expect(verdict).not.toBeNull();
+    expect(verdict!.lbPerDay).toBe(900);
+    expect(verdict!.against).toBe("2025-09-09");
+  });
+
+  it("refuses a back-dated entry that implies impossible growth to the LATER entry already on record", () => {
+    // The bypass this closes: 1000 lb posted Sep 11 first, then 100 lb
+    // back-dated to Sep 10. Backwards-only checking saw nothing before Sep 10
+    // and accepted a pair implying +900 lb in a day.
+    const verdict = implausibleAgainstNeighbours(
+      { estimated_lbs: 100, measured_on: "2025-09-10" },
+      null,
+      { measured_on: "2025-09-11", estimated_lbs: 1000 },
+    );
+    expect(verdict).not.toBeNull();
+    expect(verdict!.lbPerDay).toBe(900);
+    expect(verdict!.against).toBe("2025-09-11");
+  });
+
+  it("accepts plausible growth in both directions", () => {
+    expect(
+      implausibleAgainstNeighbours(
+        measured,
+        { measured_on: "2025-09-05", estimated_lbs: 900 },
+        { measured_on: "2025-09-15", estimated_lbs: 1100 },
+      ),
+    ).toBeNull();
+  });
+
+  it("accepts an entry with no neighbours at all", () => {
+    expect(implausibleAgainstNeighbours(measured, null, null)).toBeNull();
+  });
+
+  it("leaves shrinkage alone in both directions — a re-measure is not an error", () => {
+    expect(
+      implausibleAgainstNeighbours(
+        measured,
+        { measured_on: "2025-09-09", estimated_lbs: 1400 },
+        { measured_on: "2025-09-11", estimated_lbs: 600 },
+      ),
+    ).toBeNull();
+  });
+
+  it("stays within impliedLbPerDay's rules for unparseable neighbour dates", () => {
+    expect(
+      implausibleAgainstNeighbours(
+        measured,
+        { measured_on: "nonsense", estimated_lbs: 1 },
+        { measured_on: "also nonsense", estimated_lbs: 99999 },
+      ),
+    ).toBeNull();
+  });
+
+  it("names the prior entry when both directions are impossible", () => {
+    // Deterministic order so the grower is pointed at one date, not two.
+    const verdict = implausibleAgainstNeighbours(
+      measured,
+      { measured_on: "2025-09-09", estimated_lbs: 100 },
+      { measured_on: "2025-09-11", estimated_lbs: 2000 },
+    );
+    expect(verdict!.against).toBe("2025-09-09");
   });
 });
 

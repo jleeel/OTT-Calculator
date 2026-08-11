@@ -7,12 +7,11 @@ import {
 } from "@/lib/supabase/server";
 import {
   ImplausibleGrowthError,
-  MAX_LB_PER_DAY,
   computeFlags,
-  impliedLbPerDay,
+  implausibleAgainstNeighbours,
   type Flag,
 } from "./flags";
-import type { EntryInput } from "./validation";
+import { isUuid, type EntryInput } from "./validation";
 
 /** One row of the board: the most recent measurement for a grower's pumpkin. */
 export type LeaderboardRow = {
@@ -98,24 +97,41 @@ export async function insertEntry(
 ): Promise<{ row: LeaderboardRow; editToken: string }> {
   const supabase = createServiceRoleClient();
 
-  // Flags compare against this grower+pumpkin's most recent live entry.
-  const { data: prior, error: priorError } = await supabase
-    .from("entries")
-    .select("measured_on, estimated_lbs")
-    .eq("grower_name", input.grower_name)
-    .eq("pumpkin_name", input.pumpkin_name)
-    .is("deleted_at", null)
+  // Both neighbours in time. Flags compare against the prior entry; the
+  // refusal has to check the NEXT one too — a back-dated insert lands between
+  // rows that already exist, and checking only backwards let it imply
+  // arbitrary growth against the later row.
+  const neighbourQuery = () =>
+    supabase
+      .from("entries")
+      .select("measured_on, estimated_lbs")
+      .eq("grower_name", input.grower_name)
+      .eq("pumpkin_name", input.pumpkin_name)
+      .is("deleted_at", null);
+
+  const [
+    { data: prior, error: priorError },
+    { data: nextRow, error: nextError },
+  ] = await Promise.all([
     // Must PRECEDE this measurement, not merely be the newest row. A grower
     // back-dating an entry was compared against a later one, so `days` ran
     // negative and the jump rule quietly never fired.
-    .lte("measured_on", input.measured_on)
-    .order("measured_on", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    neighbourQuery()
+      .lte("measured_on", input.measured_on)
+      .order("measured_on", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    neighbourQuery()
+      .gt("measured_on", input.measured_on)
+      .order("measured_on", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   // A failed lookup degrades to "no flags", which is the right behaviour but
   // should not be silent — flags are the only thing computed from history.
   if (priorError) console.error("[leaderboard] prior entry lookup", priorError);
+  if (nextError) console.error("[leaderboard] next entry lookup", nextError);
 
   const estimated_lbs = estimateLbs(input);
 
@@ -125,13 +141,24 @@ export async function insertEntry(
         estimated_lbs: num(prior.estimated_lbs),
       }
     : null;
+  const next = nextRow
+    ? {
+        measured_on: String(nextRow.measured_on),
+        estimated_lbs: num(nextRow.estimated_lbs),
+      }
+    : null;
 
   // The one refusal. Above MAX_LB_PER_DAY the entry is not unusual, it is
   // impossible, and the row would sit on a public board misleading everyone
-  // who reads it. Checked before the write so nothing has to be undone.
-  const rate = impliedLbPerDay({ estimated_lbs, measured_on: input.measured_on }, previous);
-  if (rate !== null && rate > MAX_LB_PER_DAY) {
-    throw new ImplausibleGrowthError(rate, previous!.measured_on);
+  // who reads it. Checked before the write so nothing has to be undone, and
+  // against both neighbours so a back-dated entry cannot slip through.
+  const refusal = implausibleAgainstNeighbours(
+    { estimated_lbs, measured_on: input.measured_on },
+    previous,
+    next,
+  );
+  if (refusal) {
+    throw new ImplausibleGrowthError(refusal.lbPerDay, refusal.against);
   }
 
   const flags = computeFlags(
@@ -171,6 +198,12 @@ export async function softDeleteEntry(
   id: string,
   editToken: string,
 ): Promise<boolean> {
+  // Both columns are uuid. A malformed value would make Postgres error (22P02)
+  // and surface as a 502, which both invites a retry that can never succeed
+  // and answers differently for malformed tokens than for wrong ones — the
+  // route's contract is the same 403 either way, so pre-screen here.
+  if (!isUuid(id) || !isUuid(editToken)) return false;
+
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("entries")
@@ -186,6 +219,9 @@ export async function softDeleteEntry(
 
 /** Admin delete: no token required, already gated on ADMIN_PASSCODE. */
 export async function adminDeleteEntry(id: string): Promise<boolean> {
+  // Same reason as softDeleteEntry: a malformed id is "not found", not a 502.
+  if (!isUuid(id)) return false;
+
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("entries")
