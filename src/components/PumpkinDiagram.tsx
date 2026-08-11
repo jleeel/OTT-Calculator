@@ -57,8 +57,21 @@ const GUIDES: {
   {
     key: "ss",
     label: "2",
-    // Ground, over the top, ground — the full side-to-side span.
-    front: "M 150 912 C 40 520, 380 80, 790 74 C 1200 80, 1510 500, 1452 912",
+    // Ground, over the crown, ground — but ACROSS the fruit, not along it.
+    //
+    // This band's plane is perpendicular to the stem-blossom axis, and that
+    // axis runs left-right in this photo, so the plane contains the view
+    // direction and the band is very nearly edge-on: geometrically it projects
+    // to a vertical line through the crown. Drawn as a wide left-to-right arch
+    // it read as a second over-the-top measurement parallel to guide 3, which
+    // is the one thing it is not.
+    //
+    // So it is drawn as a narrow ellipse, as if the camera sat a few degrees
+    // off dead side-on: the near half comes over the crown and down the face
+    // toward the viewer, the far half passes behind and is dashed. Same
+    // front/behind treatment guide 1 gets, turned through ninety degrees.
+    front: "M 782 98 C 940 372, 934 700, 770 924",
+    behind: "M 782 98 C 628 372, 622 700, 770 924",
     chip: [790, 74],
   },
   {

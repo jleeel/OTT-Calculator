@@ -82,7 +82,9 @@ const MEASUREMENTS: {
     key: "ss",
     step: "2",
     title: "Side to side",
-    hint: "Widest point from side to side.",
+    // "Widest point from side to side" never said the tape goes over the top,
+    // which is the whole difference between this and guide 1.
+    hint: "Over the top, ground to ground, across the fruit.",
   },
   {
     key: "ee",
