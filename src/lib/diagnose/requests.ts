@@ -37,6 +37,14 @@ function ipSecret(): string {
  * and then times out has still cost money, so it has to count. The trade is
  * that a photo rejected by validation never gets here, which is right — those
  * cost nothing.
+ *
+ * The claim itself happens in Postgres (migration 0006) under a per-address
+ * advisory lock, because a check here followed by an insert is two round trips
+ * — a burst of parallel requests could all pass the check before any insert
+ * landed. The function returns the in-window timestamps from before the claim;
+ * the quota rule and retry-after maths stay in checkQuota, so the SQL and the
+ * JS cannot disagree about the window. When the verdict is ok, the row has
+ * already been recorded, atomically.
  */
 export async function claimDiagnoseSlot(
   ip: string,
@@ -44,6 +52,40 @@ export async function claimDiagnoseSlot(
 ): Promise<Quota> {
   const supabase = createServiceRoleClient();
   const hash = hashIp(ip, ipSecret());
+
+  const { data, error } = await supabase.rpc("claim_diagnose_slot", {
+    p_ip_hash: hash,
+    p_now: new Date(nowMs).toISOString(),
+    p_window_seconds: Math.round(WINDOW_MS / 1000),
+    p_max: DIAGNOSE_LIMIT.max,
+  });
+
+  if (error) {
+    // 42883: function does not exist; PGRST202: PostgREST has no such function
+    // in its schema cache. Both mean migration 0006 has not been applied yet.
+    // Fall back to the old two-step claim so the route keeps working — it is
+    // the racy path the RPC replaces, not worse than before — and say so.
+    if (error.code === "PGRST202" || error.code === "42883") {
+      console.warn(
+        "[diagnose] claim_diagnose_slot missing — apply migration 0006 for an atomic claim; using the non-atomic fallback",
+      );
+      return legacyClaimDiagnoseSlot(supabase, hash, nowMs);
+    }
+    throw error;
+  }
+
+  const stamps = (Array.isArray(data) ? data : []).map((t) =>
+    Date.parse(String(t)),
+  );
+  return checkQuota(stamps, nowMs);
+}
+
+/** The pre-0006 two-step claim. Only reached while the RPC is missing. */
+async function legacyClaimDiagnoseSlot(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+  hash: string,
+  nowMs: number,
+): Promise<Quota> {
   const since = new Date(nowMs - WINDOW_MS).toISOString();
 
   const { data, error } = await supabase

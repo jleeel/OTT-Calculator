@@ -24,10 +24,30 @@ describe("clientIp", () => {
     ).toBe("203.0.113.9");
   });
 
-  it("falls back to the left-most x-forwarded-for entry", () => {
+  it("falls back to the right-most x-forwarded-for entry — the one the nearest proxy appended", () => {
     expect(
       clientIp(headers({ "x-forwarded-for": "203.0.113.9, 70.41.3.18" })),
-    ).toBe("203.0.113.9");
+    ).toBe("70.41.3.18");
+  });
+
+  it("ignores a client-chosen left-most entry entirely", () => {
+    expect(
+      clientIp(
+        headers({ "x-forwarded-for": "anything-i-like, 10.1.1.1, 70.41.3.18" }),
+      ),
+    ).toBe("70.41.3.18");
+  });
+
+  it("skips trailing empties in a malformed chain", () => {
+    expect(clientIp(headers({ "x-forwarded-for": "70.41.3.18, , " }))).toBe(
+      "70.41.3.18",
+    );
+  });
+
+  it("uses a single bare entry as-is", () => {
+    expect(clientIp(headers({ "x-forwarded-for": "70.41.3.18" }))).toBe(
+      "70.41.3.18",
+    );
   });
 
   it("returns null when neither header is present", () => {

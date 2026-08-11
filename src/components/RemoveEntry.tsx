@@ -13,7 +13,16 @@ export default function RemoveEntry({ id }: { id: string }) {
 
   async function remove() {
     setState("working");
-    const res = await fetch(`/api/leaderboard/entries/${id}`, { method: "DELETE" });
+    // A dropped connection rejects the fetch outright — on patchy patch-side
+    // cellular that is routine, and without the catch the button stayed on a
+    // disabled "Removing…" forever.
+    let res: Response;
+    try {
+      res = await fetch(`/api/leaderboard/entries/${id}`, { method: "DELETE" });
+    } catch {
+      setState("error");
+      return;
+    }
     if (res.ok) {
       router.refresh();
       return;

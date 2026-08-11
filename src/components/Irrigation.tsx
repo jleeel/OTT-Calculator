@@ -45,8 +45,19 @@ const SOIL_LABEL: Record<SoilType, string> = {
   clay: "Clay — holds water, water less often",
 };
 
+/**
+ * The patch's LOCAL date, not UTC. Open-Meteo is asked for timezone=auto, so
+ * the series is in local dates — a UTC "today" runs a day ahead every evening
+ * (from 5pm PDT), counting tomorrow's forecast as already spent and defaulting
+ * the log's date input to tomorrow.
+ */
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0"),
+  ].join("-");
 }
 
 function readCache(): EtoCache | null {

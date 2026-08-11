@@ -118,7 +118,11 @@ caught by them. Re-derive from the primary GPC chart before changing anything.
   judgement about a grower. Between the `jump` flag (40) and this, an entry is
   marked but still accepted. The refusal names the mistyped date as the likely
   cause and never accuses; a refused entry does not burn a rate-limit slot,
-  because the session cookie is only written on success.
+  because the session cookie is only written on success. The rate is checked
+  against **both neighbours in time** — the entry before and the entry after —
+  because a back-dated insert lands between existing rows, and a
+  backwards-only check let it imply impossible growth against the later row
+  already on the board.
 
 - `/diagnose` is rate limited **by IP, in Postgres**, not by cookie. A cookie
   limit is a courtesy and clearing it resets the count; every call here costs
@@ -129,6 +133,13 @@ caught by them. Re-derive from the primary GPC chart before changing anything.
 - The slot is claimed **before** the model call, not after. A request that
   reaches Anthropic and then times out has still cost money. If the limiter
   itself is down the route **refuses** — falling open is someone else's bill.
+- The claim is **atomic in Postgres** (migration 0006): an RPC counts and
+  inserts under a per-address advisory lock, so a parallel burst cannot all
+  pass the count before any insert lands. While the migration is unapplied the
+  code falls back to the old two-step claim and logs a warning — apply 0006 to
+  close that. The limiter's identity is `x-real-ip`, else the **right-most**
+  `x-forwarded-for` hop; the left-most is client-chosen and would hand out a
+  fresh identity per request.
 - The system prompt and tool schema live in `src/lib/diagnose/prompt.ts`; the
   response type and grower-facing copy live in `types.ts`. That split is load
   bearing: the client imports `types.ts`, so keeping the prompt out of it keeps

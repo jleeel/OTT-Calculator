@@ -1,5 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { LIMITS, isValidIsoDate, stripHtml, validateEntry } from "./validation";
+import {
+  LIMITS,
+  isUuid,
+  isValidIsoDate,
+  stripHtml,
+  validateEntry,
+} from "./validation";
+
+describe("isUuid", () => {
+  it("accepts a canonical uuid in either case", () => {
+    expect(isUuid("a26eeab9-ca89-4527-865e-4c07bb834094")).toBe(true);
+    expect(isUuid("A26EEAB9-CA89-4527-865E-4C07BB834094")).toBe(true);
+  });
+
+  it("rejects everything that would make a uuid column error", () => {
+    expect(isUuid("")).toBe(false);
+    expect(isUuid("abc")).toBe(false);
+    expect(isUuid("a26eeab9ca894527865e4c07bb834094")).toBe(false); // no dashes
+    expect(isUuid("a26eeab9-ca89-4527-865e-4c07bb83409")).toBe(false); // short
+    expect(isUuid("a26eeab9-ca89-4527-865e-4c07bb834094 ")).toBe(false); // pad
+    expect(isUuid("zzzzzzzz-ca89-4527-865e-4c07bb834094")).toBe(false); // hexless
+  });
+});
 
 const TODAY = "2025-09-15";
 

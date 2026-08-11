@@ -126,19 +126,57 @@ export function impliedLbPerDay(
   return (entry.estimated_lbs - previous.estimated_lbs) / days;
 }
 
+/**
+ * The refusal check, in both directions.
+ *
+ * A new entry has up to two neighbours in time: the latest entry on or before
+ * its date, and the earliest after it — a back-dated insert lands between rows
+ * that already exist. An impossible rate against EITHER neighbour refuses the
+ * insert. Checking only the prior entry let a back-dated row imply arbitrary
+ * growth against the later entry already on the board, which is exactly the
+ * corrupt pair this rule exists to keep out of the public history.
+ *
+ * Returns the offending rate and the neighbouring entry's date, or null when
+ * every computable direction is within MAX_LB_PER_DAY. Same-day and unparseable
+ * pairs stay null (impliedLbPerDay's rules), and shrinkage is still left alone.
+ */
+export function implausibleAgainstNeighbours(
+  entry: Pick<FlagInput, "estimated_lbs" | "measured_on">,
+  prior: PreviousEntry | null | undefined,
+  next: PreviousEntry | null | undefined,
+): { lbPerDay: number; against: string } | null {
+  const back = impliedLbPerDay(entry, prior);
+  if (back !== null && back > MAX_LB_PER_DAY && prior) {
+    return { lbPerDay: back, against: prior.measured_on };
+  }
+
+  const forward = next
+    ? impliedLbPerDay(next, {
+        measured_on: entry.measured_on,
+        estimated_lbs: entry.estimated_lbs,
+      })
+    : null;
+  if (forward !== null && forward > MAX_LB_PER_DAY && next) {
+    return { lbPerDay: forward, against: next.measured_on };
+  }
+
+  return null;
+}
+
 /** Refusal, not a flag. Carried to the route so it can answer 400, not 502. */
 export class ImplausibleGrowthError extends Error {
   readonly lbPerDay: number;
-  readonly since: string;
+  /** The neighbouring entry's date — before OR after this one. */
+  readonly against: string;
 
-  constructor(lbPerDay: number, since: string) {
+  constructor(lbPerDay: number, against: string) {
     super(
-      `That is ${Math.round(lbPerDay)} lb a day since ${since}, which is beyond ` +
-        `anything on record. Check the date and the three measurements — a ` +
-        `mistyped date is the usual cause.`,
+      `That is ${Math.round(lbPerDay)} lb a day against the entry on ` +
+        `${against}, which is beyond anything on record. Check the date and ` +
+        `the three measurements — a mistyped date is the usual cause.`,
     );
     this.name = "ImplausibleGrowthError";
     this.lbPerDay = lbPerDay;
-    this.since = since;
+    this.against = against;
   }
 }
